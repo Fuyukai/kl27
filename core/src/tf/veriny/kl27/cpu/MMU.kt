@@ -11,7 +11,7 @@ import java.nio.ByteBuffer
 | Main memory     | 0x40000 - 0x100000 | Section for main memory.                       |
  */
 
-data class Instruction(val opcode: Short, val opval: Short)
+data class Instruction(val address: Int, val opcode: Short, val opval: Short)
 
 /**
  * Represents the memory for this CPU.
@@ -43,7 +43,7 @@ class MMU {
     fun readInstruction(location: Int): Instruction {
         val first = this.read16(location)
         val second = this.read16(location + 2)
-        return Instruction(opcode = first, opval = second)
+        return Instruction(address = location, opcode = first, opval = second)
     }
 
     /**

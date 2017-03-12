@@ -58,6 +58,7 @@ project(":core") {
 tasks.eclipse.doLast {
     delete ".project"
 }
+
 repositories {
     mavenCentral()
 }

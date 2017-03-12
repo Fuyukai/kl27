@@ -31,6 +31,9 @@ dependencies {
     // freetype for drawing the tty's font
     compile "com.badlogicgames.gdx:gdx-freetype:$gdxVersion"
 
+    // commons-collections
+    compile group: 'org.apache.commons', name: 'commons-collections4', version: '4.1'
+
     // because
     compile "com.github.czyzby:ktx-log:1.9.6-b1"
 }

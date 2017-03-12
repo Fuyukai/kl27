@@ -12,6 +12,11 @@ import tf.veriny.kl27.cpu.CPU
 import tf.veriny.kl27.cpu.CPUState
 import tf.veriny.kl27.cpu.K27File
 
+val opcodeMap: Map<Int, String> = mapOf(
+        0x0 to "nop",
+        0x1 to "jmpl"
+)
+
 
 // the KL27 window doesnt interact much
 // so we dont need *that* much logic here
@@ -21,7 +26,8 @@ class KL27(assembledFile: String) : ApplicationAdapter() {
     // libgdx shit
     internal lateinit var batch: SpriteBatch
     // the generated font
-    internal lateinit var font: BitmapFont
+    internal lateinit var regFont: BitmapFont
+    internal lateinit var dbgFont: BitmapFont
     // we want to translate the view to the top left
     // so we use a camera view
     internal lateinit var camera: OrthographicCamera
@@ -50,9 +56,14 @@ class KL27(assembledFile: String) : ApplicationAdapter() {
         // flip b/c camera is flipped
         fntParam.flip = true
         fntParam.size = 13
-
         // create the new font we need
-        this.font = fntGenerator.generateFont(fntParam)
+        this.regFont = fntGenerator.generateFont(fntParam)
+
+        val dbgFntParam = FreeTypeFontGenerator.FreeTypeFontParameter()
+        dbgFntParam.flip = true
+        dbgFntParam.size = 16
+        this.dbgFont = fntGenerator.generateFont(dbgFntParam)
+
         // set the window title
         Gdx.graphics.setTitle("KL27 - ${this.cpu.exeFile.filePath}")
     }
@@ -66,21 +77,35 @@ class KL27(assembledFile: String) : ApplicationAdapter() {
         this.batch.projectionMatrix = this.camera.combined
         this.batch.begin()
         // draw the status text
-        this.font.draw(batch, "KL27 - CPU ${this.cpu.state} - FPS ${Gdx.graphics.framesPerSecond}", 10f, 15f)
+        this.regFont.draw(batch, "KL27 - CPU ${this.cpu.state} - FPS ${Gdx.graphics.framesPerSecond}", 10f, 15f)
 
         // draw the registers
         this.cpu.registers.forEachIndexed {
             index, register ->
-            this.font.draw(this.batch, "R$index - 0x${register.value.toString(16)}",
+            this.regFont.draw(this.batch, "R$index - 0x${register.value.toString(16)}",
                     10f, (30 + index * 15).toFloat())
         }
 
         // draw the program counter
-        this.font.draw(batch, "PC - 0x${this.cpu.programCounter.value.toString(16)}",
+        this.regFont.draw(batch, "PC - 0x${this.cpu.programCounter.value.toString(16)}",
                 10f, 165f)
+
+        // draw the cycle count
+        this.regFont.draw(batch, "Cycle - 0x${this.cpu.cycleCount.toString(16)}", 10f, 180f)
 
         // run the CPU if it hasn't crashed
         if (this.cpu.state == CPUState.running) this.cpu.runCycle()
+
+        // draw the most recent instructions
+        this.cpu.instructionQueue.forEachIndexed {
+            i, ins ->
+            run {
+                this.dbgFont.draw(this.batch,
+                        "E: ${opcodeMap.getOrDefault(ins.opcode.toInt(), "???")}, " +
+                                "0x${ins.opcode.toString(16)} at 0x${ins.address.toString(16)}",
+                        150f, (50 + (20 * i)).toFloat())
+            }
+        }
 
         this.batch.end()
     }

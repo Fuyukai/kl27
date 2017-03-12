@@ -1,5 +1,25 @@
 package tf.veriny.kl27.cpu
 
+/*
+Header:
+| Name          | Offset | Description                                         |
+| ------------- | ------ | --------------------------------------------------- |
+| K_MAGIC       | 0x00   | Magic number, always KL27                           |
+| K_VERSION     | 0x04   | Version number, currently 1                         |
+| K_COMPRESSED  | 0x05   | Compression status, 0 for uncompressed, 1 for LZMA  |
+| K_BODY        | 0x06   | 4-byte address of where the the program body starts |
+| K_STACKSIZE   | 0x0A   | Maximum stack size. 4 <= n <= 255                   |
+| K_CHECKSUM    | 0x0B   | CRC32 checksum of uncompressed body                 |
+
+Label table:
+| Name      | Offset       | Description                                       |
+| --------- | ------------ | --------------------------------------------------|
+| KL_COUNT  | 0x14         | The number of labels in use, up to 65535          |
+| KL_LABEL  | 0x16 .. 0xnn | 6 byte labels - 2 for label ID, 4 for offset      |
+| KL_END    | 0xnn         | Signifies end of label tabel, marked by 6 x 0xFF  |
+ */
+
+
 import ktx.log.logger
 import java.io.File
 import java.io.FileInputStream
