@@ -47,6 +47,19 @@ class MMU {
     }
 
     /**
+     * Gets the offset for a label in the label table by ID.
+     */
+    fun getLabelOffset(labelId: Short): Int {
+        // since labels are written sequentially by ID, we can just calculate the offset
+        // it's 0x00100 + (6 * labelId) + 2 to get the address
+        // then just unwrap that
+        val offset = 0x00100 + (6 * labelId) + 2
+        // read 4 bytes, [offset, offset + 5)
+        val ba = this.mainMemory.copyOfRange(offset, offset + 5)
+        return ByteBuffer.wrap(ba).int
+    }
+
+    /**
      * Write an 8-bit integer into memory.
      */
     fun write8(offset: Int, value: Int) {

@@ -76,13 +76,17 @@ class CPU(f: K27File) {
 
         // MAIN INTERPRETER BLOCK
         // This runs the actual code.
+        //println(instruction.opcode.toString())
         when (instruction.opcode) {
             0x0.toShort() -> {
                 // no-op, do nothing
             }
             0x1.toShort() -> {
                 // JMPL, jump to label
-                // TODO: Implement label lookup
+                val offset = this.memory.getLabelOffset(instruction.opcode)
+                // we need to set it to 0x01000 + offset
+                // otherwise it tries to execute the label table
+                this.programCounter.value = 0x01000 + offset
             }
         }
 
