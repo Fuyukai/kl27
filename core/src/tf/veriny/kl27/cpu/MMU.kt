@@ -1,0 +1,68 @@
+package tf.veriny.kl27.cpu
+
+import java.nio.ByteBuffer
+
+/*
+| Section         | Offset             | Description                                    |
+| --------------- | ------------------ | -----------------------------------------------|
+| Reserved        | 0x00000 - 0x00100  | Reserved space of 256 bytes.                   |
+| Label table     | 0x00100 - 0x01000  | 3840 bytes for the label table, 640 labels max |
+| Program section | 0x01000 - 0x40000  | Reserved section for program space.            |
+| Main memory     | 0x40000 - 0x100000 | Section for main memory.                       |
+ */
+
+data class Instruction(val opcode: Short, val opval: Short)
+
+/**
+ * Represents the memory for this CPU.
+ */
+class MMU {
+    // allocate a 1MiB ByteArray for main memory
+    private var mainMemory = ByteArray(0x100000)
+
+    /**
+     * Reads a single 8-bit integer from memory.
+     *
+     * Note: This will return a short.
+     */
+    fun read8(offset: Int): Short {
+        return ByteBuffer.wrap(this.mainMemory.copyOfRange(offset, offset + 1)).short
+    }
+
+    /**
+     * Reads a single 16-bit integer from memory.
+     */
+    fun read16(offset: Int): Short {
+        // probably fast enough lol
+        return ByteBuffer.wrap(this.mainMemory.copyOfRange(offset, offset + 2)).short
+    }
+
+    /**
+     * Reads an instruction from memory, starting at the specified offset.
+     */
+    fun readInstruction(location: Int): Instruction {
+        val first = this.read16(location)
+        val second = this.read16(location + 2)
+        return Instruction(opcode = first, opval = second)
+    }
+
+    /**
+     * Write an 8-bit integer into memory.
+     */
+    fun write8(offset: Int, value: Int) {
+        this.mainMemory[offset] = value.toByte()
+    }
+
+    fun write8(offset: Int, value: Byte) {
+        this.mainMemory[offset] = value
+    }
+
+    /**
+     * Write a 16-bit integer into memory
+     */
+    fun write16(offset: Int, value: Int) {
+        this.mainMemory[offset] = (value shr 8).toByte()
+        this.mainMemory[offset] = value.toByte()
+    }
+
+}
