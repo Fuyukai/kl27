@@ -39,7 +39,7 @@ class CPU(f: K27File) {
     // The current executed memory system.
     val memory = MMU()
     // The registers for this CPU.
-    val registers: Array<Register> = Array<Register>(8, { i -> Register(bittiness = 16) })
+    val registers: Array<Register> = Array(8, { i -> Register(bittiness = 16) })
     // Special registers:
     // The program counter, which is the current address.
     val programCounter = Register(bittiness = 32)
@@ -63,6 +63,16 @@ class CPU(f: K27File) {
         this.programCounter.value = this.exeFile.startOffset + 0x01000
         // create the stack
         this.stack = ArrayDeque<Int>(this.exeFile.stackSize.toInt())
+    }
+
+    /**
+     * Pushes onto the stack.
+     */
+    fun pushStack(i: Int) {
+        if (this.stack.size >= this.exeFile.stackSize)
+            throw StackOverflowError()
+
+        this.stack.add(i)
     }
 
     /**
@@ -114,7 +124,13 @@ class CPU(f: K27File) {
             0x3 -> {
                 // SL, stack l(oad|literal)
                 // loads a literal onto the stack
-                this.stack.add(instruction.opval.toInt())
+                try {
+                    this.pushStack(instruction.opval.toInt())
+                } catch (err: StackOverflowError) {
+                    this.state = CPUState.errored
+                    this.instructionQueue.add(Instruction(address = this.programCounter.value, opcode = -1, opval = 0))
+                    this.lastError = "Stack overflow"
+                }
                 // add
                 this.recentActions.add(Action(1, instruction.opval.toInt()))
             }
