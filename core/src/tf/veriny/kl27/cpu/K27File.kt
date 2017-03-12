@@ -104,7 +104,7 @@ class K27File(path: String) {
             if (b == -1) break
 
             // copy into memory
-            mem.write8(offset, this.byteStream.read())
+            mem.write8(offset, b)
             offset += 1
         }
     }
