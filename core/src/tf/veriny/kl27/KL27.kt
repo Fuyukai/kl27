@@ -116,7 +116,7 @@ class KL27(assembledFile: String) : ApplicationAdapter() {
                 if (ins.opcode.toInt() != -1) {
                     this.dbgFont.draw(this.batch,
                             "E: ${opcodeMap.getOrDefault(ins.opcode.toInt(), "???")}, " +
-                                    "0x${ins.opcode.toString(16)} at 0x${ins.address.toString(16)}",
+                                    "0x${ins.opval.toString(16)} at 0x${ins.address.toString(16)}",
                             180f, (40 + (20 * i)).toFloat())
                 } else {
                     this.dbgFont.draw(this.batch,
