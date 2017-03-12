@@ -5,6 +5,3 @@ label1:
 
 main:
 	jmpl label1
-
-main:
-	nop

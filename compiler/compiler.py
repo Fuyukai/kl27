@@ -16,7 +16,6 @@ import struct
 import sys
 
 # the jump resolver
-from collections import OrderedDict
 
 
 class LabelPlaceholder:
@@ -125,18 +124,19 @@ def kl27_compile(args: argparse.Namespace):
 
     print("\ngenerating label table...")
     final_label_table = [
-        len(label_table).to_bytes(length=4, byteorder="big")
+        len(label_table).to_bytes(length=2, byteorder="big")
     ]
 
     for id, addr in label_table.values():
         # pack the (id, addr)
         final_label_table.append(
-            struct.pack(">IH", id, addr)
+            struct.pack(">hi", id, addr)
         )
 
-    final_label_table = b"".join(final_label_table)
+    final_label_table.append(b"\xff\xff\xff\xff\xff\xff")
+    print("generated", len(final_label_table), "table entries")
 
-    print("generated", len(label_table), "labels")
+    final_label_table = b"".join(final_label_table)
 
     def fix_jumps():
         loop_code = code.copy()
@@ -154,8 +154,6 @@ def kl27_compile(args: argparse.Namespace):
     print("instructions parsed (est.):", len(final_code) // 4)
 
     print("\ngenerating header...")
-    corrected_entry_point = (16 + len(final_label_table) + entry)
-    print("corrected entry point:", corrected_entry_point)
     header = []
     # 1: magic number
     header += [b"KL27"]
@@ -164,7 +162,7 @@ def kl27_compile(args: argparse.Namespace):
     # 3: K_COMPRESS
     header += [b"\x00"]
     # 4: K_BODY, the main entry point
-    header += [(16 + len(final_label_table) + entry).to_bytes(4, byteorder="big")]
+    header += [entry.to_bytes(4, byteorder="big")]
     # 5: K_STACKSIZE
     header += [(255).to_bytes(2, byteorder="big")]
     # 6: K_CHECKSUM, ignore this for now
@@ -172,11 +170,11 @@ def kl27_compile(args: argparse.Namespace):
     header = b"".join(header)
 
     with open(args.outfile, 'wb') as out:
-        out.write(header)
-        out.write(final_label_table)
-        out.write(final_code)
+        final = out.write(header)
+        final += out.write(final_label_table)
+        final += out.write(final_code)
 
-    print("compiled file successfully!")
+    print(f"compiled file successfully! written {final} bytes.")
 
 
 if __name__ == "__main__":
