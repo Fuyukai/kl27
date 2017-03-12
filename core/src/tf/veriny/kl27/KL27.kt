@@ -32,6 +32,7 @@ class KL27(assembledFile: String) : ApplicationAdapter() {
     internal lateinit var regFont: BitmapFont
     internal lateinit var jumpFont: BitmapFont
     internal lateinit var dbgFont: BitmapFont
+    internal lateinit var errFont: BitmapFont
     // we want to translate the view to the top left
     // so we use a camera view
     internal lateinit var camera: OrthographicCamera
@@ -71,6 +72,8 @@ class KL27(assembledFile: String) : ApplicationAdapter() {
         dbgFntParam.flip = true
         dbgFntParam.size = 16
         this.dbgFont = fntGenerator.generateFont(dbgFntParam)
+        this.errFont = fntGenerator.generateFont(dbgFntParam)
+        this.errFont.color = Color.RED
 
         // set the window title
         Gdx.graphics.setTitle("KL27 - ${this.cpu.exeFile.filePath}")
@@ -119,7 +122,7 @@ class KL27(assembledFile: String) : ApplicationAdapter() {
                                     "0x${ins.opval.toString(16)} at 0x${ins.address.toString(16)}",
                             180f, (40 + (20 * i)).toFloat())
                 } else {
-                    this.dbgFont.draw(this.batch,
+                    this.errFont.draw(this.batch,
                             "X: ${cpu.lastError}",
                             180f, (40 + (20 * i)).toFloat())
                 }
