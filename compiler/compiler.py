@@ -15,6 +15,7 @@ import pprint
 import struct
 import sys
 
+
 # the jump resolver
 
 
@@ -42,6 +43,12 @@ def compile_jmpl(line: str):
     # pass the line directly
     pl = LabelPlaceholder(line)
     return [b"\x00\x01", pl]
+
+
+def compile_hlt(line: str):
+    # fmt: `hlt`
+    # halts the CPU
+    return [b"\x00\x02"]
 
 
 def kl27_compile(args: argparse.Namespace):
