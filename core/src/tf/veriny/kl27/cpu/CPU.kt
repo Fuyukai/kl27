@@ -27,6 +27,8 @@ class CPU(f: K27File) {
     val programCounter = Register(bittiness = 32)
     // The stack.
     val stack: Queue<Int>
+    // The last error.
+    var lastError: String = ""
 
     // Mostly used for diagnostics.
     // The recent instruction queue.
@@ -67,6 +69,8 @@ class CPU(f: K27File) {
         // read the next instruction from memory, using the PC value
         val instruction = this.memory.readInstruction(this.programCounter.value)
         this.programCounter.value += 4
+        // add to the end of the queue for the main app to poll off of
+        this.instructionQueue.add(instruction)
 
         // MAIN INTERPRETER BLOCK
         // This runs the actual code.
@@ -84,9 +88,13 @@ class CPU(f: K27File) {
                 this.recentJumps.add(Pair(this.programCounter.value, newOffset))
                 this.programCounter.value = newOffset
             }
+            else -> {
+                // unknown opcode
+                this.state = CPUState.errored
+                this.instructionQueue.add(Instruction(address = this.programCounter.value, opcode = -1, opval = 0))
+                this.lastError = "Unknown opcode"
+            }
         }
-        // add to the end of the queue for the main app to poll off of
-        this.instructionQueue.add(instruction)
 
         return instruction
 

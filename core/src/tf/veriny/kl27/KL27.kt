@@ -14,6 +14,7 @@ import tf.veriny.kl27.cpu.CPUState
 import tf.veriny.kl27.cpu.K27File
 
 val opcodeMap: Map<Int, String> = mapOf(
+        -1 to "err",
         0x0 to "nop",
         0x1 to "jmpl"
 )
@@ -112,10 +113,16 @@ class KL27(assembledFile: String) : ApplicationAdapter() {
         this.cpu.instructionQueue.forEachIndexed {
             i, ins ->
             run {
-                this.dbgFont.draw(this.batch,
-                        "E: ${opcodeMap.getOrDefault(ins.opcode.toInt(), "???")}, " +
-                                "0x${ins.opcode.toString(16)} at 0x${ins.address.toString(16)}",
-                        180f, (40 + (20 * i)).toFloat())
+                if (ins.opcode.toInt() != -1) {
+                    this.dbgFont.draw(this.batch,
+                            "E: ${opcodeMap.getOrDefault(ins.opcode.toInt(), "???")}, " +
+                                    "0x${ins.opcode.toString(16)} at 0x${ins.address.toString(16)}",
+                            180f, (40 + (20 * i)).toFloat())
+                } else {
+                    this.dbgFont.draw(this.batch,
+                            "X: ${cpu.lastError}",
+                            180f, (40 + (20 * i)).toFloat())
+                }
             }
         }
 
