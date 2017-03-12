@@ -22,11 +22,17 @@ class CPU(f: K27File) {
     val memory = MMU()
     // The registers for this CPU.
     val registers: Array<Register> = Array<Register>(8, { i -> Register(bittiness = 16) })
-    // The recent instruction queue.
-    val instructionQueue: Queue<Instruction> = CircularFifoQueue<Instruction>(18)
     // Special registers:
     // The program counter, which is the current address.
     val programCounter = Register(bittiness = 32)
+    // The stack.
+    val stack: Queue<Int>
+
+    // Mostly used for diagnostics.
+    // The recent instruction queue.
+    val instructionQueue: Queue<Instruction> = CircularFifoQueue<Instruction>(20)
+    // The recent jump queue.
+    val recentJumps: Queue<Pair<Int, Int>> = CircularFifoQueue<Pair<Int, Int>>(24);
 
     init {
         // copy into memory the label table and instructions
@@ -35,6 +41,8 @@ class CPU(f: K27File) {
 
         // set the program counter to the current entry point + offset
         this.programCounter.value = this.exeFile.startOffset + 0x01000
+        // create the stack
+        this.stack = ArrayDeque<Int>(this.exeFile.stackSize.toInt())
     }
 
     /**
@@ -72,7 +80,9 @@ class CPU(f: K27File) {
                 val offset = this.memory.getLabelOffset(instruction.opcode)
                 // we need to set it to 0x01000 + offset
                 // otherwise it tries to execute the label table
-                this.programCounter.value = 0x01000 + offset
+                val newOffset = 0x01000 + offset
+                this.recentJumps.add(Pair(this.programCounter.value, newOffset))
+                this.programCounter.value = newOffset
             }
         }
         // add to the end of the queue for the main app to poll off of

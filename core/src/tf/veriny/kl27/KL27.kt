@@ -3,6 +3,7 @@ package tf.veriny.kl27
 import com.badlogic.gdx.Application
 import com.badlogic.gdx.ApplicationAdapter
 import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.graphics.g2d.BitmapFont
@@ -26,7 +27,9 @@ class KL27(assembledFile: String) : ApplicationAdapter() {
     // libgdx shit
     internal lateinit var batch: SpriteBatch
     // the generated font
+    internal lateinit var mainFont: BitmapFont
     internal lateinit var regFont: BitmapFont
+    internal lateinit var jumpFont: BitmapFont
     internal lateinit var dbgFont: BitmapFont
     // we want to translate the view to the top left
     // so we use a camera view
@@ -56,8 +59,12 @@ class KL27(assembledFile: String) : ApplicationAdapter() {
         // flip b/c camera is flipped
         fntParam.flip = true
         fntParam.size = 13
-        // create the new font we need
+        // create the coloured fonts
+        this.mainFont = fntGenerator.generateFont(fntParam)
         this.regFont = fntGenerator.generateFont(fntParam)
+        this.regFont.color = Color.CHARTREUSE
+        this.jumpFont = fntGenerator.generateFont(fntParam)
+        this.jumpFont.color = Color.ORANGE
 
         val dbgFntParam = FreeTypeFontGenerator.FreeTypeFontParameter()
         dbgFntParam.flip = true
@@ -77,7 +84,7 @@ class KL27(assembledFile: String) : ApplicationAdapter() {
         this.batch.projectionMatrix = this.camera.combined
         this.batch.begin()
         // draw the status text
-        this.regFont.draw(batch, "KL27 - CPU ${this.cpu.state} - FPS ${Gdx.graphics.framesPerSecond}", 10f, 15f)
+        this.mainFont.draw(batch, "KL27 - CPU ${this.cpu.state} - FPS ${Gdx.graphics.framesPerSecond}", 10f, 15f)
 
         // draw the registers
         this.cpu.registers.forEachIndexed {
@@ -87,11 +94,16 @@ class KL27(assembledFile: String) : ApplicationAdapter() {
         }
 
         // draw the program counter
-        this.regFont.draw(batch, "PC - 0x${this.cpu.programCounter.value.toString(16)}",
-                10f, 165f)
+        this.mainFont.draw(batch, "PC - 0x${this.cpu.programCounter.value.toString(16)}",
+                10f, 180f)
 
         // draw the cycle count
-        this.regFont.draw(batch, "Cycle - 0x${this.cpu.cycleCount.toString(16)}", 10f, 180f)
+        this.mainFont.draw(batch, "Cycle - 0x${this.cpu.cycleCount.toString(16)}", 10f, 195f)
+
+        // draw info about the exe
+        this.mainFont.draw(batch, "K27 version: 0x${this.cpu.exeFile.version.toString(16)}", 10f, 225f)
+        this.mainFont.draw(batch, "Max stack size: ${this.cpu.exeFile.stackSize}", 10f, 240f)
+        this.mainFont.draw(batch, "Cur stack size: ${this.cpu.stack.size}", 10f, 255f)
 
         // run the CPU if it hasn't crashed
         if (this.cpu.state == CPUState.running) this.cpu.runCycle()
@@ -103,9 +115,18 @@ class KL27(assembledFile: String) : ApplicationAdapter() {
                 this.dbgFont.draw(this.batch,
                         "E: ${opcodeMap.getOrDefault(ins.opcode.toInt(), "???")}, " +
                                 "0x${ins.opcode.toString(16)} at 0x${ins.address.toString(16)}",
-                        150f, (50 + (20 * i)).toFloat())
+                        180f, (40 + (20 * i)).toFloat())
             }
         }
+
+        // draw the most recent jumps
+        this.cpu.recentJumps.forEachIndexed {
+            index, pair ->
+            this.jumpFont.draw(this.batch,
+                    "J: 0x${pair.first.toString(16)} --> 0x${pair.second.toString(16)}",
+                    435f, (15 + (index * 15)).toFloat())
+        }
+
 
         this.batch.end()
     }
