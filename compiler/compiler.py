@@ -48,7 +48,7 @@ def compile_jmpl(line: str):
 def compile_hlt(line: str):
     # fmt: `hlt`
     # halts the CPU
-    return [b"\x00\x00\x00\x00"]
+    return [b"\x00\x02\x00\x00"]
 
 
 def kl27_compile(args: argparse.Namespace):
