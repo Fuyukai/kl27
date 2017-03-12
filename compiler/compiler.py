@@ -59,6 +59,17 @@ def compile_sl(line: str):
     return [b"\x00\x03", val.to_bytes(2, byteorder="big")]
 
 
+def compile_spop(line: str):
+    # fmt: `spop <i>`
+    # pops the top <x> items from the stack
+    if line:
+        val = int(line, 0)
+    else:
+        val = 1
+
+    return [b"\x00\x04", val.to_bytes(2, byteorder="big")]
+
+
 def kl27_compile(args: argparse.Namespace):
     print("compiling", args.infile)
 

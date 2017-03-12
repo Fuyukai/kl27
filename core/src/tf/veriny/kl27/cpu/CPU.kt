@@ -76,6 +76,16 @@ class CPU(f: K27File) {
     }
 
     /**
+     * Pops from the stack.
+     */
+    fun popStack(): Int {
+        if (this.stack.size <= 0)
+            throw RuntimeException("Stack underflow")
+
+        return this.stack.remove()
+    }
+
+    /**
      * Runs a single cycle of the CPU.
      *
      * Returns the instruction just executed.
@@ -124,15 +134,25 @@ class CPU(f: K27File) {
             0x3 -> {
                 // SL, stack l(oad|literal)
                 // loads a literal onto the stack
-                try {
-                    this.pushStack(instruction.opval.toInt())
-                } catch (err: StackOverflowError) {
+                try { this.pushStack(instruction.opval.toInt()) }
+                catch (err: StackOverflowError) {
                     this.state = CPUState.errored
                     this.instructionQueue.add(Instruction(address = this.programCounter.value, opcode = -1, opval = 0))
                     this.lastError = "Stack overflow"
                 }
                 // add
                 this.recentActions.add(Action(1, instruction.opval.toInt()))
+            }
+            0x4 -> {
+                // SPOP, stack pop
+                // pops <x> items from the top of the stack
+                try { (0..instruction.opval).forEach { this.popStack() } }
+                catch (err: RuntimeException) {
+                    this.state = CPUState.errored
+                    this.instructionQueue.add(Instruction(address = this.programCounter.value, opcode = -1, opval = 0))
+                    this.lastError = "Stack underflow"
+                }
+
             }
             else -> {
                 // unknown opcode
