@@ -125,12 +125,24 @@ class KL27(assembledFile: String) : ApplicationAdapter() {
             }
         }
 
-        // draw the most recent jumps
-        this.cpu.recentJumps.forEachIndexed {
-            index, pair ->
-            this.jumpFont.draw(this.batch,
-                    "J: 0x${pair.first.toString(16)} --> 0x${pair.second.toString(16)}",
-                    435f, (15 + (index * 15)).toFloat())
+        // draw the most recent actions
+        this.cpu.recentActions.forEachIndexed {
+            index, action ->
+            run {
+                val where = (15 + index * 15).toFloat()
+                when (action.type) {
+                // jump
+                    0 -> this.jumpFont.draw(this.batch,
+                            "J: 0x${action.first.toString(16)} --> 0x${action.second!!.toString(16)}",
+                            435f, where)
+                // stack push
+                    1 -> this.jumpFont.draw(this.batch,
+                            "S: PUSH 0x${action.first.toString(16)}",
+                            435f, where)
+                    else -> {
+                    }
+                }
+            }
         }
 
 

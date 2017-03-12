@@ -18,6 +18,16 @@ val opcodeMap: Map<Int, String> = mapOf(
         0x2 to "hlt"
 )
 
+// ACTION MAPPING:
+// 0 - jump
+// 1 - stack push
+// 2 - stack pop
+// 3 - memory read
+// 4 - memory write
+// 5 - register read
+// 6 - register write
+data class Action(val type: Int, val first: Int, val second: Int? = null)
+
 class CPU(f: K27File) {
     // The current cycle count of the CPU.
     // This is incremented once for every instruction executed.
@@ -41,8 +51,8 @@ class CPU(f: K27File) {
     // Mostly used for diagnostics.
     // The recent instruction queue.
     val instructionQueue: Queue<Instruction> = CircularFifoQueue<Instruction>(20)
-    // The recent jump queue.
-    val recentJumps: Queue<Pair<Int, Int>> = CircularFifoQueue<Pair<Int, Int>>(24);
+    // The recent action queue.
+    val recentActions: Queue<Action> = CircularFifoQueue<Action>(24)
 
     init {
         // copy into memory the label table and instructions
@@ -93,12 +103,20 @@ class CPU(f: K27File) {
                 // we need to set it to 0x01000 + offset
                 // otherwise it tries to execute the label table
                 val newOffset = 0x01000 + offset
-                this.recentJumps.add(Pair(this.programCounter.value - 4, newOffset))
+                this.recentActions.add(Action(0, this.programCounter.value - 4, newOffset))
                 this.programCounter.value = newOffset
             }
             0x2 -> {
                 // HLT, halt
                 this.state = CPUState.halted
+            }
+        // stack ops
+            0x3 -> {
+                // SL, stack l(oad|literal)
+                // loads a literal onto the stack
+                this.stack.add(instruction.opval.toInt())
+                // add
+                this.recentActions.add(Action(1, instruction.opval.toInt()))
             }
             else -> {
                 // unknown opcode

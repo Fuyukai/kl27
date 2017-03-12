@@ -51,6 +51,14 @@ def compile_hlt(line: str):
     return [b"\x00\x02\x00\x00"]
 
 
+# stack operations
+def compile_sl(line: str):
+    # fmt: `sl <int>`
+    # puts a literal on the stack
+    val = int(line, 0)
+    return [b"\x00\x03", val.to_bytes(2, byteorder="big")]
+
+
 def kl27_compile(args: argparse.Namespace):
     print("compiling", args.infile)
 
