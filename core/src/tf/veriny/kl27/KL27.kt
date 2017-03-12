@@ -12,12 +12,7 @@ import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator
 import tf.veriny.kl27.cpu.CPU
 import tf.veriny.kl27.cpu.CPUState
 import tf.veriny.kl27.cpu.K27File
-
-val opcodeMap: Map<Int, String> = mapOf(
-        -1 to "err",
-        0x0 to "nop",
-        0x1 to "jmpl"
-)
+import tf.veriny.kl27.cpu.opcodeMap
 
 
 // the KL27 window doesnt interact much

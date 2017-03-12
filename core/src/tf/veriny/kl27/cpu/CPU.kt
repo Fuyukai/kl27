@@ -10,6 +10,14 @@ enum class CPUState {
     errored
 }
 
+
+val opcodeMap: Map<Int, String> = mapOf(
+        -1 to "err",
+        0x0 to "nop",
+        0x1 to "jmpl",
+        0x2 to "hlt"
+)
+
 class CPU(f: K27File) {
     // The current cycle count of the CPU.
     // This is incremented once for every instruction executed.
@@ -87,6 +95,10 @@ class CPU(f: K27File) {
                 val newOffset = 0x01000 + offset
                 this.recentJumps.add(Pair(this.programCounter.value, newOffset))
                 this.programCounter.value = newOffset
+            }
+            0x2 -> {
+                // HLT, halt
+                this.state = CPUState.halted
             }
             else -> {
                 // unknown opcode
