@@ -93,7 +93,7 @@ class CPU(f: K27File) {
                 // we need to set it to 0x01000 + offset
                 // otherwise it tries to execute the label table
                 val newOffset = 0x01000 + offset
-                this.recentJumps.add(Pair(this.programCounter.value, newOffset))
+                this.recentJumps.add(Pair(this.programCounter.value - 4, newOffset))
                 this.programCounter.value = newOffset
             }
             0x2 -> {

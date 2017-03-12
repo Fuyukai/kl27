@@ -112,8 +112,9 @@ class KL27(assembledFile: String) : ApplicationAdapter() {
             i, ins ->
             run {
                 if (ins.opcode.toInt() != -1) {
+                    val default = "0x" + ins.opcode.toString(16)
                     this.dbgFont.draw(this.batch,
-                            "E: ${opcodeMap.getOrDefault(ins.opcode.toInt(), "???")}, " +
+                            "E: ${opcodeMap.getOrDefault(ins.opcode.toInt(), default)}, " +
                                     "0x${ins.opval.toString(16)} at 0x${ins.address.toString(16)}",
                             180f, (40 + (20 * i)).toFloat())
                 } else {
