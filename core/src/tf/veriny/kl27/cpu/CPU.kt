@@ -45,7 +45,9 @@ class CPU(f: K27File) {
     // The program counter, which is the current address.
     val programCounter = Register(bittiness = 32)
     // The memory address register.
-    //
+    val MAR = Register(bittiness = 32)
+    // The memory value register.
+    val MVR = Register(bittiness = 16)
 
     // The stack.
     val stack: Queue<Int>

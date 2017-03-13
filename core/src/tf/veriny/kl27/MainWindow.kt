@@ -107,17 +107,22 @@ class MainWindow(assembledFile: String) : ApplicationAdapter() {
                     10f, (30 + index * 15).toFloat())
         }
 
-        // draw the program counter
-        this.mainFont.draw(batch, "PC - 0x${this.cpu.programCounter.value.toString(16)}",
-                10f, 180f)
 
         // draw the cycle count
-        this.mainFont.draw(batch, "Cycle - 0x${this.cpu.cycleCount.toString(16)}", 10f, 195f)
+        this.mainFont.draw(batch, "Cycle - 0x${this.cpu.cycleCount.toString(16)}", 10f, 180f)
 
         // draw info about the exe
-        this.mainFont.draw(batch, "K27 version: 0x${this.cpu.exeFile.version.toString(16)}", 10f, 225f)
-        this.mainFont.draw(batch, "Max stack size: ${this.cpu.exeFile.stackSize}", 10f, 240f)
-        this.mainFont.draw(batch, "Cur stack size: ${this.cpu.stack.size}", 10f, 255f)
+        this.mainFont.draw(batch, "K27 version: 0x${this.cpu.exeFile.version.toString(16)}", 10f, 210f)
+        this.mainFont.draw(batch, "Max stack size: ${this.cpu.exeFile.stackSize}", 10f, 225f)
+        this.mainFont.draw(batch, "Cur stack size: ${this.cpu.stack.size}", 10f, 240f)
+
+        // draw the program counter and MAR/MVR
+        this.regFont.draw(batch, "PC  - 0x${this.cpu.programCounter.value.toString(16)}",
+                10f, 270f)
+        this.regFont.draw(batch, "MAR - 0x${this.cpu.MAR.value.toString(16)}",
+                10f, 285f)
+        this.regFont.draw(batch, "MVR - 0x${this.cpu.MVR.value.toString(16)}",
+                10f, 300f)
 
         // run the CPU if it hasn't crashed
         if (this.cpu.state == CPUState.running) this.cpu.runCycle()
@@ -154,7 +159,7 @@ class MainWindow(assembledFile: String) : ApplicationAdapter() {
                     1 -> this.jumpFont.draw(this.batch,
                             "S: PUSH 0x${action.first.toString(16)}",
                             435f, where)
-                    // stack pop
+                // stack pop
                     2 -> this.jumpFont.draw(this.batch,
                             "S: POP #${action.first.toString()}",
                             435f, where)
