@@ -3,6 +3,8 @@ package tf.veriny.kl27
 import com.badlogic.gdx.Application
 import com.badlogic.gdx.ApplicationAdapter
 import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application
+import com.badlogic.gdx.backends.lwjgl3.Lwjgl3WindowConfiguration
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.OrthographicCamera
@@ -14,12 +16,16 @@ import tf.veriny.kl27.cpu.CPUState
 import tf.veriny.kl27.cpu.K27File
 import tf.veriny.kl27.cpu.opcodeMap
 
+// If the GPU window should be created.
+// This is false currently until the GPU code is written.
+const val MAKE_GPU = false
+
 
 // the KL27 window doesnt interact much
 // so we dont need *that* much logic here
 // just keep track of errors and draw appropriately
 // its just the tty frontend basically
-class KL27(assembledFile: String) : ApplicationAdapter() {
+class MainWindow(assembledFile: String) : ApplicationAdapter() {
     // libgdx shit
     internal lateinit var batch: SpriteBatch
     // the generated font
@@ -72,6 +78,15 @@ class KL27(assembledFile: String) : ApplicationAdapter() {
 
         // set the window title
         Gdx.graphics.setTitle("KL27 - ${this.cpu.exeFile.filePath}")
+
+        // spawn a second window for gpu
+        if (MAKE_GPU) {
+            val app = Gdx.app as Lwjgl3Application
+            val config = Lwjgl3WindowConfiguration()
+            config.setTitle("KL27 GPU")
+            app.newWindow(GPUWindow(), config)
+        }
+
     }
 
     override fun render() {
