@@ -101,10 +101,7 @@ class K27File(path: String) {
             this.byteStream.read(ba)
             println("Copied label: " + ba.contentToString())
             // copy into memory byte by byte
-            for (b: Byte in ba) {
-                mem.write8(offset, b)
-                offset += 1
-            }
+            ba.forEach { b -> mem.write8(offset, b); offset++ }
         }
         // skip 6 bytes
         this.byteStream.read(ByteArray(6))
