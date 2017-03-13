@@ -15,7 +15,12 @@ val opcodeMap: Map<Int, String> = mapOf(
         -1 to "err",
         0x0 to "nop",
         0x1 to "jmpl",
-        0x2 to "hlt"
+        0x2 to "hlt",
+        // stack
+        0x3 to "sl",
+        0x4 to "spop",
+        // register
+        0xa to "rgw"
 )
 
 // ACTION MAPPING:
@@ -136,7 +141,7 @@ class CPU(f: K27File) {
                 // HLT, halt
                 this.state = CPUState.halted
             }
-        // stack ops
+            // stack ops
             0x3 -> {
                 // SL, stack l(oad|literal)
                 // loads a literal onto the stack
@@ -159,6 +164,19 @@ class CPU(f: K27File) {
                     this.lastError = "Stack underflow"
                 }
                 this.recentActions.add(Action(2, instruction.opval.toInt()))
+
+            }
+            0x0a -> {
+                // RGW, register write
+                // pops TOS and writes it to register
+                try { val TOS = this.popStack(); this.registers[instruction.opval.toInt()].value = TOS }
+                catch (err: RuntimeException) {
+                    this.state = CPUState.errored
+                    this.instructionQueue.add(Instruction(address = this.programCounter.value, opcode = -1, opval = 0))
+                    this.lastError = "Stack underflow"
+                }
+                this.recentActions.add(Action(6, instruction.opval.toInt(),
+                        this.registers[instruction.opval.toInt()].value))
 
             }
             else -> {

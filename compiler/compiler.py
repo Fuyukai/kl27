@@ -17,8 +17,6 @@ import sys
 
 
 # the jump resolver
-
-
 class LabelPlaceholder:
     def __init__(self, label_name: str):
         self.label_name = label_name
@@ -28,6 +26,14 @@ class LabelPlaceholder:
         Resolves the jump address for this label.
         """
         return table[self.label_name][0].to_bytes(2, byteorder="big")
+
+
+# register mapping
+R_MAP = {
+    "MAR": 8,
+    "MVR": 9,
+    **{"R{}".format(v): v for v in range(0, 8)}
+}
 
 
 # function definitions
@@ -69,6 +75,14 @@ def compile_spop(line: str):
 
     return [b"\x00\x04", val.to_bytes(2, byteorder="big")]
 
+
+# register operations
+def compile_rgw(line: str):
+    # fmt: `rgw <reg>`
+    # pops the top item from the stack, and writes it to the register
+    reg = line.upper()
+
+    return [b"\x00\x0a", R_MAP[reg].to_bytes(2, byteorder="big")]
 
 def kl27_compile(args: argparse.Namespace):
     print("compiling", args.infile)
