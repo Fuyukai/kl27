@@ -154,6 +154,10 @@ class MainWindow(assembledFile: String) : ApplicationAdapter() {
                     1 -> this.jumpFont.draw(this.batch,
                             "S: PUSH 0x${action.first.toString(16)}",
                             435f, where)
+                    // stack pop
+                    2 -> this.jumpFont.draw(this.batch,
+                            "S: POP #${action.first.toString()}",
+                            435f, where)
                     else -> {
                     }
                 }

@@ -40,9 +40,13 @@ class CPU(f: K27File) {
     val memory = MMU()
     // The registers for this CPU.
     val registers: Array<Register> = Array(8, { i -> Register(bittiness = 16) })
+
     // Special registers:
     // The program counter, which is the current address.
     val programCounter = Register(bittiness = 32)
+    // The memory address register.
+    //
+
     // The stack.
     val stack: Queue<Int>
     // The last error.
@@ -146,12 +150,13 @@ class CPU(f: K27File) {
             0x4 -> {
                 // SPOP, stack pop
                 // pops <x> items from the top of the stack
-                try { (0..instruction.opval).forEach { this.popStack() } }
+                try { (0..instruction.opval - 1).forEach { this.popStack() } }
                 catch (err: RuntimeException) {
                     this.state = CPUState.errored
                     this.instructionQueue.add(Instruction(address = this.programCounter.value, opcode = -1, opval = 0))
                     this.lastError = "Stack underflow"
                 }
+                this.recentActions.add(Action(2, instruction.opval.toInt()))
 
             }
             else -> {

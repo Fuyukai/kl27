@@ -190,7 +190,7 @@ def kl27_compile(args: argparse.Namespace):
     # 4: K_BODY, the main entry point
     header += [entry.to_bytes(4, byteorder="big")]
     # 5: K_STACKSIZE
-    header += [(255).to_bytes(2, byteorder="big")]
+    header += [(4).to_bytes(2, byteorder="big")]
     # 6: K_CHECKSUM, ignore this for now
     header += [b"\x00\x00\x00\x00"]
     header = b"".join(header)
