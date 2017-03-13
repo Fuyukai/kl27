@@ -177,7 +177,6 @@ class CPU(f: K27File) {
                 }
                 this.recentActions.add(Action(6, instruction.opval.toInt(),
                         this.registers[instruction.opval.toInt()].value))
-
             }
             else -> {
                 // unknown opcode

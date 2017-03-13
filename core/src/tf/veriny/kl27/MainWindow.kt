@@ -151,20 +151,33 @@ class MainWindow(assembledFile: String) : ApplicationAdapter() {
             run {
                 val where = (15 + index * 15).toFloat()
                 when (action.type) {
-                // jump
+                    // jump
                     0 -> this.jumpFont.draw(this.batch,
                             "J: 0x${action.first.toString(16)} --> 0x${action.second!!.toString(16)}",
                             435f, where)
-                // stack push
+
+                    // stack push
                     1 -> this.jumpFont.draw(this.batch,
                             "S: PUSH 0x${action.first.toString(16)}",
                             435f, where)
-                // stack pop
+
+                    // stack pop
                     2 -> this.jumpFont.draw(this.batch,
-                            "S: POP #${action.first.toString()}",
+                            "S: POP #${action.first}",
                             435f, where)
-                    else -> {
-                    }
+
+                    // register read
+                    5 -> this.jumpFont.draw(this.batch,
+                            "R: R #${action.first}",
+                            435f, where)
+
+                    // register write
+                    6 -> this.jumpFont.draw(this.batch,
+                            "R: W 0x${action.second!!.toString(16)} --> #${action.first}",
+                            435f, where)
+                    else -> this.jumpFont.draw(this.batch,
+                            "X: UNKNOWN ACTION",
+                            435f, where)
                 }
             }
         }
