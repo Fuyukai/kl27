@@ -1,10 +1,11 @@
+#ID STDLIB_STACKUTIL
 // Standard library file.
 // This provides some stack utilities.
 // The functions contained within this file can be brought into scope with:
 // #include "stdlib/stackutil.ktl"
 
 // FUNCTIONS IN THIS FILE MUST BE CALLED WITH `jmpr`.
-// Failure to do so will lead to the
+// Failure to do so will lead to jumping to unknown locations.
 
 // Swaps TOS and TOS2.
 // This will use the registers R5 and R6 to swap.

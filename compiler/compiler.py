@@ -129,6 +129,9 @@ def kl27_compile(args: argparse.Namespace):
     label_table = {}
     # machine code memory
     code = []
+    # current includes table
+    # prevents re-including files
+    includes = []
 
     # current label
     current_label = None
@@ -140,8 +143,22 @@ def kl27_compile(args: argparse.Namespace):
     def process_include(line: str):
         # this is the file we want to include
         second = shlex.split(line)[1]
-        print(f"including file '{second}'")
         with open(second) as f:
+            firstline = f.readline()
+            firstline = firstline.replace("\n", "").replace("\r", "")
+            if not firstline[0:3] == "#ID":
+                print(f"warning: included file '{second}' does not have an ID directive.\n"
+                      f"\tThis file could potentially be included multiple times.")
+            else:
+                id = " ".join(firstline.split(" ")[1:])
+                if id in includes:
+                    # don't re-include
+                    print(f"not re-including file '{second}")
+                    return
+
+                includes.append(id)
+                print(f"including file '{second}' ")
+
             newlines = f.read()
 
         # insert the new lines into the `lines` count
