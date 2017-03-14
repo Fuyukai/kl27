@@ -216,8 +216,10 @@ class CPU(f: K27File) {
                 // it is a shorthand instruction for:
                 //  rgr R7
                 //  jmpa
+                val pcVal = this.registers[0x7].value
+                val final = if (pcVal < 0x1000) pcVal + 0x1000 else pcVal
                 this.recentActions.add(Action(0, this.programCounter.value -4, this.registers[0x7].value))
-                this.programCounter.value = this.registers[0x7].value
+                this.programCounter.value = final
             }
             0x23 -> {
                 // JMPA, jump absolute
