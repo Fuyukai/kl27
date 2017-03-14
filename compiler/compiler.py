@@ -89,12 +89,11 @@ def compile_rgr(line: str):
 # jump operations
 def compile_jmpl(line: str):
     # fmt: `jmpl <label>`
-    # pass the line directly
+    # JuMP Label. This will jump to the specified label.
     pl = LabelPlaceholder(line)
     return [b"\x00\x20", pl]
 
 
-# convenience functions
 def compile_jmpr(line: str):
     # fmt: `jmpr <label>`
     # JuMP Return. This will jump to the specified label, and set register R7.
@@ -108,6 +107,13 @@ def compile_ret(line: str):
     # RETurn from jump
     # This will jump to the address specified in `R7`.
     return [b"\x00\x22\x00\x00"]
+
+
+def compile_jmpa(line: str):
+    # fmt: `jmpa`
+    # JuMP Absolute. This will jump to the absolute address, specified by TOS.
+    # It is very rare that this is needed; a JMPL or JMPR will often be better.
+    return [b"\x00\x23\x00\x00"]
 
 
 def kl27_compile(args: argparse.Namespace):

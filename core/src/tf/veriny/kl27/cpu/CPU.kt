@@ -24,7 +24,8 @@ val opcodeMap: Map<Int, String> = mapOf(
         // jumps
         0x20 to "jmpl",
         0x21 to "jmpr",
-        0x22 to "ret"
+        0x22 to "ret",
+        0x23 to "jmpa"
 )
 
 // ACTION MAPPING:
@@ -169,21 +170,25 @@ class CPU(f: K27File) {
             0x10 -> {
                 // RGW, register write
                 // pops TOS and writes it to register
-                try { val TOS = this.popStack(); this.registers[instruction.opval.toInt()].value = TOS }
+                this.recentActions.add(Action(2, 1))
+                try {
+                    val TOS = this.popStack(); this.registers[instruction.opval.toInt()].value = TOS
+                    this.recentActions.add(Action(6, instruction.opval.toInt(), TOS))
+                }
                 catch (err: RuntimeException) {
                     this.error("Stack underflow")
                 }
-                this.recentActions.add(Action(6, instruction.opval.toInt(),
-                        this.registers[instruction.opval.toInt()].value))
             }
             0x11 -> {
                 // RGR, register read
                 // reads from the register and copies it to the stack
-                try { this.pushStack(this.registers[instruction.opval.toInt()].value) }
+                val toPush = this.registers[instruction.opval.toInt()].value
+                try { this.pushStack(toPush) }
                 catch (err: StackOverflowError) {
                     this.error("Stack overflow")
                 }
                 this.recentActions.add(Action(5, instruction.opval.toInt()))
+                this.recentActions.add(Action(1, toPush))
             }
             0x20 -> {
                 // JMPL, jump to label
@@ -200,6 +205,7 @@ class CPU(f: K27File) {
                 val newOffset = 0x01000 + offset
                 // copy the current PC onto R7
                 this.registers[0x7].value = this.programCounter.value
+                this.recentActions.add(Action(6, 0x7, this.programCounter.value))
                 // update the PC value to the place we want to jump
                 this.recentActions.add(Action(0, this.programCounter.value - 4, newOffset))
                 this.programCounter.value = newOffset
@@ -212,6 +218,18 @@ class CPU(f: K27File) {
                 //  jmpa
                 this.recentActions.add(Action(0, this.programCounter.value -4, this.registers[0x7].value))
                 this.programCounter.value = this.registers[0x7].value
+            }
+            0x23 -> {
+                // JMPA, jump absolute
+                this.recentActions.add(Action(2, 1))
+                try {
+                    var TOS = this.popStack()
+                    // make sure it's above 0x01000
+                    val offset = if (TOS < 0x01000) 0x01000 + TOS else TOS
+                    this.recentActions.add(Action(0, this.programCounter.value - 4, offset))
+                    this.programCounter.value = offset
+                }
+                catch (err: StackOverflowError) { this.error("Stack overflow") }
             }
             else -> {
                 // unknown opcode
