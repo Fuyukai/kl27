@@ -124,6 +124,24 @@ class MainWindow(assembledFile: String) : ApplicationAdapter(), InputProcessor {
         this.regFont.draw(batch, "MVR - 0x${this.cpu.MVR.value.toString(16)}",
                 10f, 300f)
 
+        // draw the stack
+        val stack = this.cpu.stack.toTypedArray()
+        (0..this.cpu.exeFile.stackSize - 1).forEach {
+            i ->
+            run {
+                var v = "empty"
+                try {
+                    val got = stack.get(i)
+                    v = "0x${got.toString(16)}"
+                }
+                catch (err: IndexOutOfBoundsException) {}
+                val where = (330 + (i * 15)).toFloat()
+                this.mainFont.draw(batch,
+                        "- #$i --> ${v}",
+                        10f, where)
+            }
+        }
+
         // run the CPU if it hasn't crashed
         if (this.cpu.state == CPUState.running) this.cpu.runCycle()
 
