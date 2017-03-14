@@ -166,6 +166,16 @@ class MainWindow(assembledFile: String) : ApplicationAdapter() {
                             "S: POP #${action.first}",
                             435f, where)
 
+                    // memory read
+                    3 -> this.jumpFont.draw(this.batch,
+                            "M: R 0x${action.first.toString(16)}",
+                            435f, where)
+
+                    // memory write
+                    4 -> this.jumpFont.draw(this.batch,
+                            "M: W 0x${action.second!!.toString(16)} --> #${action.first}",
+                            435f, where)
+
                     // register read
                     5 -> this.jumpFont.draw(this.batch,
                             "R: R #${action.first}",
@@ -175,6 +185,8 @@ class MainWindow(assembledFile: String) : ApplicationAdapter() {
                     6 -> this.jumpFont.draw(this.batch,
                             "R: W 0x${action.second!!.toString(16)} --> #${action.first}",
                             435f, where)
+
+                    // all unknown values
                     else -> this.jumpFont.draw(this.batch,
                             "X: UNKNOWN ACTION",
                             435f, where)
