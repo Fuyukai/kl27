@@ -22,7 +22,9 @@ val opcodeMap: Map<Int, String> = mapOf(
         0x10 to "rgw",
         0x11 to "rgr",
         // jumps
-        0x20 to "jmpl"
+        0x20 to "jmpl",
+        0x21 to "jmpr",
+        0x22 to "ret"
 )
 
 // ACTION MAPPING:
@@ -76,6 +78,15 @@ class CPU(f: K27File) {
         this.programCounter.value = this.exeFile.startOffset + 0x01000
         // create the stack
         this.stack = ArrayDeque<Int>(this.exeFile.stackSize.toInt())
+    }
+
+    /**
+     * Sets the CPU state to errored.
+     */
+    fun error(message: String) {
+        this.state = CPUState.errored
+        this.instructionQueue.add(Instruction(this.programCounter.value, -1, 0))
+        this.lastError = message
     }
 
     /**
@@ -140,9 +151,7 @@ class CPU(f: K27File) {
                 // loads a literal onto the stack
                 try { this.pushStack(instruction.opval.toInt()) }
                 catch (err: StackOverflowError) {
-                    this.state = CPUState.errored
-                    this.instructionQueue.add(Instruction(address = this.programCounter.value, opcode = -1, opval = 0))
-                    this.lastError = "Stack overflow"
+                    this.error("Stack overflow")
                 }
                 // add
                 this.recentActions.add(Action(1, instruction.opval.toInt()))
@@ -152,9 +161,7 @@ class CPU(f: K27File) {
                 // pops <x> items from the top of the stack
                 try { (0..instruction.opval - 1).forEach { this.popStack() } }
                 catch (err: RuntimeException) {
-                    this.state = CPUState.errored
-                    this.instructionQueue.add(Instruction(address = this.programCounter.value, opcode = -1, opval = 0))
-                    this.lastError = "Stack underflow"
+                    this.error("Stack underflow")
                 }
                 this.recentActions.add(Action(2, instruction.opval.toInt()))
 
@@ -164,12 +171,19 @@ class CPU(f: K27File) {
                 // pops TOS and writes it to register
                 try { val TOS = this.popStack(); this.registers[instruction.opval.toInt()].value = TOS }
                 catch (err: RuntimeException) {
-                    this.state = CPUState.errored
-                    this.instructionQueue.add(Instruction(address = this.programCounter.value, opcode = -1, opval = 0))
-                    this.lastError = "Stack underflow"
+                    this.error("Stack underflow")
                 }
                 this.recentActions.add(Action(6, instruction.opval.toInt(),
                         this.registers[instruction.opval.toInt()].value))
+            }
+            0x11 -> {
+                // RGR, register read
+                // reads from the register and copies it to the stack
+                try { this.pushStack(this.registers[instruction.opval.toInt()].value) }
+                catch (err: StackOverflowError) {
+                    this.error("Stack overflow")
+                }
+                this.recentActions.add(Action(5, instruction.opval.toInt()))
             }
             0x20 -> {
                 // JMPL, jump to label

@@ -77,12 +77,22 @@ def compile_rgw(line: str):
 
     return [b"\x00\x10", R_MAP[reg].to_bytes(2, byteorder="big")]
 
+
+def compile_rgr(line: str):
+    # fmt: `rgr <reg>`
+    # reads the value from the register and puts it on the stack
+    reg = line.upper()
+
+    return [b"\x00\x11", R_MAP[reg].to_bytes(2, byteorder="big")]
+
+
 # jump operations
 def compile_jmpl(line: str):
     # fmt: `jmpl <label>`
     # pass the line directly
     pl = LabelPlaceholder(line)
     return [b"\x00\x20", pl]
+
 
 # convenience functions
 def compile_jmpr(line: str):
@@ -92,11 +102,13 @@ def compile_jmpr(line: str):
     pl = LabelPlaceholder(line)
     return [b"\x00\x21", pl]
 
+
 def compile_ret(line: str):
     # fmt: `ret`
     # RETurn from jump
     # This will jump to the address specified in `R7`.
     return [b"\x00\x22\x00\x00"]
+
 
 def kl27_compile(args: argparse.Namespace):
     print("compiling", args.infile)
