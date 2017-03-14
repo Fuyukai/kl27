@@ -261,27 +261,27 @@ class MainWindow(assembledFile: String) : ApplicationAdapter(), InputProcessor {
                 this.cpu.runCycle()
             }
         }
-        return true;
+        return true
     }
 
     // touch events - we don't use these
     override fun touchDown(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
-        return false;
+        return false
     }
 
     override fun touchDragged(screenX: Int, screenY: Int, pointer: Int): Boolean {
-        return false;
+        return false
     }
 
     override fun scrolled(amount: Int): Boolean {
-        return false;
+        return false
     }
 
     override fun touchUp(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
-        return false;
+        return false
     }
 
     override fun mouseMoved(screenX: Int, screenY: Int): Boolean {
-        return false;
+        return false
     }
 }
