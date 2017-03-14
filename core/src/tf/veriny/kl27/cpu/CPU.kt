@@ -226,19 +226,16 @@ class CPU(f: K27File) {
                 this.recentActions.add(Action(2, 1))
                 try {
                     var TOS = this.popStack()
-                    // make sure it's above 0x01000
+                    // make sure it 's above 0x01000
                     val offset = if (TOS < 0x01000) 0x01000 + TOS else TOS
                     this.recentActions.add(Action(0, this.programCounter.value - 4, offset))
                     this.programCounter.value = offset
                 }
                 catch (err: StackOverflowError) { this.error("Stack overflow") }
             }
-            else -> {
+            else ->
                 // unknown opcode
-                this.state = CPUState.errored
-                this.instructionQueue.add(Instruction(address = this.programCounter.value, opcode = -1, opval = 0))
-                this.lastError = "Unknown opcode 0x${instruction.opcode.toString(16)}"
-            }
+                this.error("Unknown opcode 0x${instruction.opcode.toString(16)}")
         }
 
         return instruction
