@@ -13,14 +13,16 @@ enum class CPUState {
 
 val opcodeMap: Map<Int, String> = mapOf(
         -1 to "err",
-        0x0 to "nop",
-        0x1 to "jmpl",
-        0x2 to "hlt",
+        0x00 to "nop",
+        0x01 to "hlt",
         // stack
-        0x3 to "sl",
-        0x4 to "spop",
+        0x02 to "sl",
+        0x03 to "spop",
         // register
-        0xa to "rgw"
+        0x10 to "rgw",
+        0x11 to "rgr",
+        // jumps
+        0x20 to "jmpl"
 )
 
 // ACTION MAPPING:
@@ -125,24 +127,15 @@ class CPU(f: K27File) {
         // This runs the actual code.
         //println(instruction.opcode.toString())
         when (instruction.opcode.toInt()) {
-            0x0 -> {
+            0x00 -> {
                 // no-op, do nothing
             }
-            0x1 -> {
-                // JMPL, jump to label
-                val offset = this.memory.getLabelOffset(instruction.opcode)
-                // we need to set it to 0x01000 + offset
-                // otherwise it tries to execute the label table
-                val newOffset = 0x01000 + offset
-                this.recentActions.add(Action(0, this.programCounter.value - 4, newOffset))
-                this.programCounter.value = newOffset
-            }
-            0x2 -> {
+            0x01 -> {
                 // HLT, halt
                 this.state = CPUState.halted
             }
             // stack ops
-            0x3 -> {
+            0x02 -> {
                 // SL, stack l(oad|literal)
                 // loads a literal onto the stack
                 try { this.pushStack(instruction.opval.toInt()) }
@@ -154,7 +147,7 @@ class CPU(f: K27File) {
                 // add
                 this.recentActions.add(Action(1, instruction.opval.toInt()))
             }
-            0x4 -> {
+            0x03 -> {
                 // SPOP, stack pop
                 // pops <x> items from the top of the stack
                 try { (0..instruction.opval - 1).forEach { this.popStack() } }
@@ -166,7 +159,7 @@ class CPU(f: K27File) {
                 this.recentActions.add(Action(2, instruction.opval.toInt()))
 
             }
-            0x0a -> {
+            0x10 -> {
                 // RGW, register write
                 // pops TOS and writes it to register
                 try { val TOS = this.popStack(); this.registers[instruction.opval.toInt()].value = TOS }
@@ -178,11 +171,39 @@ class CPU(f: K27File) {
                 this.recentActions.add(Action(6, instruction.opval.toInt(),
                         this.registers[instruction.opval.toInt()].value))
             }
+            0x20 -> {
+                // JMPL, jump to label
+                val offset = this.memory.getLabelOffset(instruction.opcode)
+                // we need to set it to 0x01000 + offset
+                // otherwise it tries to execute the label table
+                val newOffset = 0x01000 + offset
+                this.recentActions.add(Action(0, this.programCounter.value - 4, newOffset))
+                this.programCounter.value = newOffset
+            }
+            0x21 -> {
+                // JMPR, jump return
+                val offset = this.memory.getLabelOffset(instruction.opcode)
+                val newOffset = 0x01000 + offset
+                // copy the current PC onto R7
+                this.registers[0x7].value = this.programCounter.value
+                // update the PC value to the place we want to jump
+                this.recentActions.add(Action(0, this.programCounter.value - 4, newOffset))
+                this.programCounter.value = newOffset
+            }
+            0x22 -> {
+                // RET, return from JMPR
+                // this will jump to the location specified in R7
+                // it is a shorthand instruction for:
+                //  rgr R7
+                //  jmpa
+                this.recentActions.add(Action(0, this.programCounter.value -4, this.registers[0x7].value))
+                this.programCounter.value = this.registers[0x7].value
+            }
             else -> {
                 // unknown opcode
                 this.state = CPUState.errored
                 this.instructionQueue.add(Instruction(address = this.programCounter.value, opcode = -1, opval = 0))
-                this.lastError = "Unknown opcode"
+                this.lastError = "Unknown opcode 0x${instruction.opcode.toString(16)}"
             }
         }
 

@@ -1,7 +1,10 @@
 // Compiler test file
 
 label1:
-	nop
+	sl 0xabc
+	rgw R0
+	ret
 
 main:
-	jmpl label1
+	jmpr label1
+	hlt

@@ -44,17 +44,10 @@ def compile_nop(line: str):
     return [b"\x00\x00\x00\x00"]
 
 
-def compile_jmpl(line: str):
-    # fmt: `jmpl <label>`
-    # pass the line directly
-    pl = LabelPlaceholder(line)
-    return [b"\x00\x01", pl]
-
-
 def compile_hlt(line: str):
     # fmt: `hlt`
     # halts the CPU
-    return [b"\x00\x02\x00\x00"]
+    return [b"\x00\x01\x00\x00"]
 
 
 # stack operations
@@ -62,7 +55,7 @@ def compile_sl(line: str):
     # fmt: `sl <int>`
     # puts a literal on the stack
     val = int(line, 0)
-    return [b"\x00\x03", val.to_bytes(2, byteorder="big")]
+    return [b"\x00\x02", val.to_bytes(2, byteorder="big")]
 
 
 def compile_spop(line: str):
@@ -73,7 +66,7 @@ def compile_spop(line: str):
     else:
         val = 1
 
-    return [b"\x00\x04", val.to_bytes(2, byteorder="big")]
+    return [b"\x00\x03", val.to_bytes(2, byteorder="big")]
 
 
 # register operations
@@ -82,7 +75,28 @@ def compile_rgw(line: str):
     # pops the top item from the stack, and writes it to the register
     reg = line.upper()
 
-    return [b"\x00\x0a", R_MAP[reg].to_bytes(2, byteorder="big")]
+    return [b"\x00\x10", R_MAP[reg].to_bytes(2, byteorder="big")]
+
+# jump operations
+def compile_jmpl(line: str):
+    # fmt: `jmpl <label>`
+    # pass the line directly
+    pl = LabelPlaceholder(line)
+    return [b"\x00\x20", pl]
+
+# convenience functions
+def compile_jmpr(line: str):
+    # fmt: `jmpr <label>`
+    # JuMP Return. This will jump to the specified label, and set register R7.
+    # A `ret` instruction will `return` from the label, jumping back to the location of R7.
+    pl = LabelPlaceholder(line)
+    return [b"\x00\x21", pl]
+
+def compile_ret(line: str):
+    # fmt: `ret`
+    # RETurn from jump
+    # This will jump to the address specified in `R7`.
+    return [b"\x00\x22\x00\x00"]
 
 def kl27_compile(args: argparse.Namespace):
     print("compiling", args.infile)
