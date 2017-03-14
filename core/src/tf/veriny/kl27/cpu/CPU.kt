@@ -201,7 +201,7 @@ class CPU(f: K27File) {
             }
             0x21 -> {
                 // JMPR, jump return
-                val offset = this.memory.getLabelOffset(instruction.opcode)
+                val offset = this.memory.getLabelOffset(instruction.opval)
                 val newOffset = 0x01000 + offset
                 // copy the current PC onto R7
                 this.registers[0x7].value = this.programCounter.value
