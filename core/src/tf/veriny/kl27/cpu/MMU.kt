@@ -17,8 +17,8 @@ data class Instruction(val address: Int, val opcode: Short, val opval: Short)
  * Represents the memory for this CPU.
  */
 class MMU {
-    // allocate a 1MiB ByteArray for main memory
-    private var mainMemory = ByteArray(0x100000)
+    // allocate a 2MiB ByteArray for main memory
+    private var mainMemory = ByteArray(0x200000)
 
     /**
      * Reads a single 8-bit integer from memory.
