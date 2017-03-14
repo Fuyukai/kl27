@@ -12,6 +12,7 @@ This compiler does several things:
 """
 import argparse
 import pprint
+import shlex
 import struct
 import sys
 
@@ -132,7 +133,30 @@ def kl27_compile(args: argparse.Namespace):
     # current label
     current_label = None
 
-    for lineno, line in enumerate(data.splitlines()):
+    lines = data.splitlines()
+    lineno = 0
+
+    # preprocessor checks
+    def process_include(line: str):
+        # this is the file we want to include
+        second = shlex.split(line)[1]
+        print(f"including file '{second}'")
+        with open(second) as f:
+            newlines = f.read()
+
+        # insert the new lines into the `lines` count
+        # this is a hacky slice assignment
+        lines[lineno:lineno] = newlines.splitlines()
+
+    while True:
+        # load the next line from splitlines
+        try:
+            line = lines[lineno]
+        except IndexError:
+            break
+        else:
+            lineno += 1
+
         # clean up shit whitespace
         line = line.lstrip().rstrip()
         # ignore whitespace
@@ -142,6 +166,18 @@ def kl27_compile(args: argparse.Namespace):
         # strip comments
         if line.startswith("//"):
             continue
+
+        # preprocessor check
+        if line.startswith("#"):
+            processor = line.split(" ")[0][1:]
+            func = locals().get(f"process_{processor}")
+            if not func:
+                print(f"error: line {lineno}: unknown statement `{processor}`")
+                return 1
+            else:
+                # call the preprocessor
+                func(line)
+                continue
 
         # check if it's a label
         if line.endswith(":"):
@@ -170,7 +206,7 @@ def kl27_compile(args: argparse.Namespace):
         glob = globals()
         func = f"compile_{instruction}"
         if func not in glob:
-            print(f"error: line {lineno}: unknown instruction `{instruction}`.")
+            print(f"error: line {lineno}: in label {current_label}:\n\t unknown instruction `{instruction}`.")
             return 1
         print(f"compiling instruction {instruction} at address {current_pointer} inside {current_label}")
 

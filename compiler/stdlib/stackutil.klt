@@ -1,0 +1,23 @@
+// Standard library file.
+// This provides some stack utilities.
+// The functions contained within this file can be brought into scope with:
+// #include "stdlib/stackutil.ktl"
+
+// FUNCTIONS IN THIS FILE MUST BE CALLED WITH `jmpr`.
+// Failure to do so will lead to the
+
+// Swaps TOS and TOS2.
+// This will use the registers R5 and R6 to swap.
+// Make sure you have saved the data in these first.
+std/swap_stack:
+    // Read TOS into R5.
+    rgw R5
+    // Read TOS2 into R6.
+    rgw R6
+    // Read R5 onto the stack.
+    rgr R5
+    // Read R6 onto the stack.
+    rgr R6
+
+    // return if appliable
+    ret
