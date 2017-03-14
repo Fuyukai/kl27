@@ -1,8 +1,6 @@
 package tf.veriny.kl27
 
-import com.badlogic.gdx.Application
-import com.badlogic.gdx.ApplicationAdapter
-import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.*
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3WindowConfiguration
 import com.badlogic.gdx.graphics.Color
@@ -25,7 +23,7 @@ const val MAKE_GPU = false
 // so we dont need *that* much logic here
 // just keep track of errors and draw appropriately
 // its just the tty frontend basically
-class MainWindow(assembledFile: String) : ApplicationAdapter() {
+class MainWindow(assembledFile: String) : ApplicationAdapter(), InputProcessor {
     // libgdx shit
     internal lateinit var batch: SpriteBatch
     // the generated font
@@ -51,7 +49,7 @@ class MainWindow(assembledFile: String) : ApplicationAdapter() {
 
         // make the CPU
         this.cpu = CPU(this.mainFile)
-        this.cpu.state = CPUState.running
+        this.cpu.state = CPUState.halted
 
         this.batch = SpriteBatch()
 
@@ -78,6 +76,8 @@ class MainWindow(assembledFile: String) : ApplicationAdapter() {
 
         // set the window title
         Gdx.graphics.setTitle("KL27 - ${this.cpu.exeFile.filePath}")
+        // add ourselves as an input processor
+        Gdx.input.inputProcessor = this
 
         // spawn a second window for gpu
         if (MAKE_GPU) {
@@ -200,5 +200,70 @@ class MainWindow(assembledFile: String) : ApplicationAdapter() {
 
     override fun dispose() {
         this.batch.dispose()
+        // rip the fonts
+        this.mainFont.dispose()
+        this.jumpFont.dispose()
+        this.regFont.dispose()
+        this.dbgFont.dispose()
+        this.errFont.dispose()
+    }
+
+
+    // Input handling, a lot of this we don't care about.
+    override fun keyTyped(character: Char): Boolean {
+        // TODO
+        return false
+    }
+
+
+    override fun keyUp(keycode: Int): Boolean {
+        // not used
+        return false
+    }
+
+
+    override fun keyDown(keycode: Int): Boolean {
+        // switch on keycode
+        // we might need to
+        when(keycode) {
+            // Mode switches
+            Input.Keys.R -> this.cpu.toggleState()
+            Input.Keys.H -> this.cpu.setHalted()
+            Input.Keys.D -> {
+                if (this.cpu.state == CPUState.errored) return true
+                // enable debugging
+                this.cpu.state = CPUState.debugging
+            }
+
+            // Debugging commands
+            // Step one forward
+            Input.Keys.S -> {
+                if (this.cpu.state != CPUState.debugging) return true
+                // run a single cycle
+                this.cpu.runCycle()
+            }
+        }
+        return true;
+    }
+
+    // touch events - we don't use these
+    override fun touchDown(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
+        return false;
+    }
+
+    override fun touchDragged(screenX: Int, screenY: Int, pointer: Int): Boolean {
+        return false;
+    }
+
+    override fun scrolled(amount: Int): Boolean {
+        return false;
+    }
+
+    override fun touchUp(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
+        return false;
+    }
+
+    override fun mouseMoved(screenX: Int, screenY: Int): Boolean {
+        return false;
     }
 }

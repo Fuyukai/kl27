@@ -7,7 +7,8 @@ import java.util.*
 enum class CPUState {
     halted,
     running,
-    errored
+    errored,
+    debugging
 }
 
 
@@ -80,6 +81,39 @@ class CPU(f: K27File) {
         // create the stack
         this.stack = ArrayDeque<Int>(this.exeFile.stackSize.toInt())
     }
+
+    /**
+     * Halts the CPU.
+     *
+     * This will not run if the CPU is errored.
+     */
+    fun setHalted() {
+        if (this.state == CPUState.errored) return
+        this.state = CPUState.halted
+    }
+
+    /**
+     * Sets the state of the CPU to running.
+     *
+     * This will not run if the CPU is errored.
+     */
+    fun setRunning() {
+        if (this.state == CPUState.errored) return
+        this.state = CPUState.running
+    }
+
+    /**
+     * Toggles the state of the CPU.
+     */
+    fun toggleState() {
+        when(this.state) {
+            CPUState.running,
+            CPUState.debugging ->
+                this.setHalted()
+            CPUState.halted -> this.setRunning()
+        }
+    }
+
 
     /**
      * Sets the CPU state to errored.
