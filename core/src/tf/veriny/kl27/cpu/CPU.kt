@@ -87,10 +87,9 @@ class CPU(f: K27File) {
      *
      * This will not run if the CPU is errored.
      */
-    fun setHalted() {
-        if (this.state == CPUState.errored) return
-        this.state = CPUState.halted
-    }
+    fun setHalted() =
+        if (this.state == CPUState.errored) {} else this.state = CPUState.halted
+
 
     /**
      * Sets the state of the CPU to running.
@@ -105,14 +104,14 @@ class CPU(f: K27File) {
     /**
      * Toggles the state of the CPU.
      */
-    fun toggleState() {
+    fun toggleState() =
         when(this.state) {
             CPUState.running,
             CPUState.debugging ->
                 this.setHalted()
             CPUState.halted -> this.setRunning()
+            else -> {}
         }
-    }
 
 
     /**
