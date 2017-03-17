@@ -126,6 +126,8 @@ class CPU(f: K27File) {
         this.state = CPUState.errored
         this.instructionQueue.add(Instruction(this.programCounter.value, -1, 0))
         this.lastError = message
+
+        throw CPUSignal(message)
     }
 
     /**
@@ -133,7 +135,7 @@ class CPU(f: K27File) {
      */
     fun pushStack(i: Int) {
         if (this.stack.size >= this.exeFile.stackSize)
-            throw StackOverflowError()
+            this.error("Stack overflow")
 
         this.stack.add(i)
     }
@@ -143,7 +145,7 @@ class CPU(f: K27File) {
      */
     fun popStack(): Int {
         if (this.stack.size <= 0)
-            throw CPUSignal("Stack underflow")
+            this.error("Stack underflow")
 
         return this.stack.remove()
     }
@@ -154,8 +156,8 @@ class CPU(f: K27File) {
             8 -> this.MAR
             9 -> this.MVR
             10 -> this.programCounter
-            else -> { this.error("Unknown register"); throw CPUSignal() }
-        }
+            else -> { this.error("Unknown register") }
+        } as Register
 
         return reg.value
     }
@@ -168,9 +170,9 @@ class CPU(f: K27File) {
             in 0..7 -> this.registers[regIndex]
             8 -> this.MAR
             9 -> this.MVR
-            10 -> { this.error("Cannot write to PC"); throw CPUSignal() }
-            else -> { this.error("Unknown register"); throw CPUSignal() }
-        }
+            10 -> { this.error("Cannot write to PC") }
+            else -> { this.error("Unknown register") }
+        } as Register
 
         reg.value = value
     }
@@ -216,9 +218,7 @@ class CPU(f: K27File) {
                 // SL, stack l(oad|literal)
                 // loads a literal onto the stack
                 try { this.pushStack(instruction.opval.toInt()) }
-                catch (err: StackOverflowError) {
-                    this.error("Stack overflow")
-                }
+                catch (err: CPUSignal) {}
                 // add
                 this.recentActions.add(Action(1, instruction.opval.toInt()))
             }
@@ -226,9 +226,7 @@ class CPU(f: K27File) {
                 // SPOP, stack pop
                 // pops <x> items from the top of the stack
                 try { (0..instruction.opval - 1).forEach { this.popStack() } }
-                catch (err: RuntimeException) {
-                    this.error("Stack underflow")
-                }
+                catch (err: CPUSignal) {}
                 this.recentActions.add(Action(2, instruction.opval.toInt()))
 
             }
@@ -256,7 +254,7 @@ class CPU(f: K27File) {
             }
             0x20 -> {
                 // JMPL, jump to label
-                val offset = this.memory.getLabelOffset(instruction.opcode)
+                val offset = this.memory.getLabelOffset(instruction.opval)
                 // we need to set it to 0x01000 + offset
                 // otherwise it tries to execute the label table
                 val newOffset = 0x01000 + offset
@@ -289,7 +287,7 @@ class CPU(f: K27File) {
                 // JMPA, jump absolute
                 this.recentActions.add(Action(2, 1))
                 try {
-                    var TOS = this.popStack()
+                    val TOS = this.popStack()
                     // make sure it 's above 0x01000
                     val offset = if (TOS < 0x01000) 0x01000 + TOS else TOS
                     this.recentActions.add(Action(0, this.programCounter.value - 4, offset))

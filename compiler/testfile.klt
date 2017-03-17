@@ -1,10 +1,7 @@
 // Compiler test file
 
-label1:
-	sl 0xabc
-	rgw R0
-	ret
-
 main:
-	jmpr label1
+	jmpl program
+
+program:
 	hlt
