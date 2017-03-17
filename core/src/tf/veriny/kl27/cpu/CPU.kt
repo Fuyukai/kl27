@@ -66,7 +66,7 @@ class CPU(f: K27File) {
     val MVR = Register(bittiness = 16)
 
     // The stack.
-    val stack: Queue<Int>
+    val stack: ArrayDeque<Int>
     // The last error.
     var lastError: String = ""
 
@@ -122,12 +122,13 @@ class CPU(f: K27File) {
     /**
      * Sets the CPU state to errored.
      */
-    fun error(message: String) {
+    fun error(message: String, raise: Boolean = true) {
         this.state = CPUState.errored
         this.instructionQueue.add(Instruction(this.programCounter.value, -1, 0))
         this.lastError = message
 
-        throw CPUSignal(message)
+        if (raise)
+            throw CPUSignal(message)
     }
 
     /**
@@ -138,6 +139,7 @@ class CPU(f: K27File) {
             this.error("Stack overflow")
 
         this.stack.add(i)
+        this.recentActions.add(Action(1, i))
     }
 
     /**
@@ -147,7 +149,9 @@ class CPU(f: K27File) {
         if (this.stack.size <= 0)
             this.error("Stack underflow")
 
-        return this.stack.remove()
+        this.recentActions.add(Action(2, 1))
+        // because java (tm!)
+        return this.stack.removeLast()
     }
 
     fun readFromReg(regIndex: Int): Int {
@@ -158,6 +162,8 @@ class CPU(f: K27File) {
             10 -> this.programCounter
             else -> { this.error("Unknown register") }
         } as Register
+
+        this.recentActions.add(Action(5, regIndex))
 
         return reg.value
     }
@@ -174,6 +180,8 @@ class CPU(f: K27File) {
             else -> { this.error("Unknown register") }
         } as Register
 
+        this.recentActions.add(Action(6, regIndex, value))
+
         reg.value = value
     }
 
@@ -182,7 +190,7 @@ class CPU(f: K27File) {
      *
      * Returns the instruction just executed.
      */
-    fun runCycle(): Instruction {
+    private fun _runCycle(): Instruction {
         when (this.state) {
             CPUState.halted -> {
                 throw RuntimeException("Cannot run cycle on halted CPU")
@@ -219,25 +227,19 @@ class CPU(f: K27File) {
                 // loads a literal onto the stack
                 try { this.pushStack(instruction.opval.toInt()) }
                 catch (err: CPUSignal) {}
-                // add
-                this.recentActions.add(Action(1, instruction.opval.toInt()))
             }
             0x03 -> {
                 // SPOP, stack pop
                 // pops <x> items from the top of the stack
                 try { (0..instruction.opval - 1).forEach { this.popStack() } }
                 catch (err: CPUSignal) {}
-                this.recentActions.add(Action(2, instruction.opval.toInt()))
-
             }
             0x10 -> {
                 // RGW, register write
                 // pops TOS and writes it to register
-                this.recentActions.add(Action(2, 1))
                 try {
                     val TOS = this.popStack()
                     this.writeToReg(instruction.opval.toInt(), TOS)
-                    this.recentActions.add(Action(6, instruction.opval.toInt(), TOS))
                 }
                 catch (err: CPUSignal) {}
             }
@@ -246,11 +248,9 @@ class CPU(f: K27File) {
                 // reads from the register and copies it to the stack
                 try {
                     val toPush = this.readFromReg(instruction.opval.toInt())
-                    this.recentActions.add(Action(1, toPush))
                     this.pushStack(toPush)
                 }
                 catch (err: CPUSignal) {}
-                this.recentActions.add(Action(5, instruction.opval.toInt()))
             }
             0x20 -> {
                 // JMPL, jump to label
@@ -266,8 +266,7 @@ class CPU(f: K27File) {
                 val offset = this.memory.getLabelOffset(instruction.opval)
                 val newOffset = 0x01000 + offset
                 // copy the current PC onto R7
-                this.registers[0x7].value = this.programCounter.value
-                this.recentActions.add(Action(6, 0x7, this.programCounter.value))
+                this.writeToReg(7, this.programCounter.value)
                 // update the PC value to the place we want to jump
                 this.recentActions.add(Action(0, this.programCounter.value - 4, newOffset))
                 this.programCounter.value = newOffset
@@ -290,17 +289,36 @@ class CPU(f: K27File) {
                     val TOS = this.popStack()
                     // make sure it 's above 0x01000
                     val offset = if (TOS < 0x01000) 0x01000 + TOS else TOS
-                    this.recentActions.add(Action(0, this.programCounter.value - 4, offset))
                     this.programCounter.value = offset
                 }
                 catch (err: CPUSignal) {}
             }
+            // math
+            0x30 -> {
+                // ADD, addition
+                var toAdd: Int
+                if (instruction.opval.toInt() == 0) {
+                    // pop from stack
+                    toAdd = this.popStack()
+                } else {
+                    toAdd = instruction.opval.toInt()
+                }
+                println(toAdd)
+                val final = this.popStack() + toAdd
+                this.pushStack(final)
+            }
             else ->
                 // unknown opcode
-                this.error("Unknown opcode 0x${instruction.opcode.toString(16)}")
+                this.error("Unknown opcode 0x${instruction.opcode.toString(16)}", raise = false)
         }
 
         return instruction
+    }
 
+    fun runCycle(){
+        try {
+            this._runCycle()
+        }
+        catch (err: CPUSignal) {}
     }
 }

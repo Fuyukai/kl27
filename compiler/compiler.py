@@ -28,11 +28,16 @@ class LabelPlaceholder:
         """
         return table[self.label_name][0].to_bytes(2, byteorder="big")
 
+    # used for moving the pointer ahead
+    def __len__(self):
+        return 2
+
 
 # register mapping
 R_MAP = {
     "MAR": 8,
     "MVR": 9,
+    "PC": 10,
     **{"R{}".format(v): v for v in range(0, 8)}
 }
 
@@ -92,22 +97,46 @@ def compile_jmpl(line: str):
     # fmt: `jmpl <label>`
     # JuMP Label. This will jump to the specified label.
     pl = LabelPlaceholder(line)
-    return [b"\x00\x20", pl]
+    return [
+        b"\x00\x20", pl
+    ]
 
 
 def compile_jmpr(line: str):
     # fmt: `jmpr <label>`
     # JuMP Return. This will jump to the specified label, and set register R7.
     # A `ret` instruction will `return` from the label, jumping back to the location of R7.
+    # this is NOT a real instruction!
+    # it compiles to `rgr pc; add 10; rgw R7; jmpl <label>`.
+
+    # get a label placeholder that we need to jump to label
     pl = LabelPlaceholder(line)
-    return [b"\x00\x21", pl]
+
+    # emit the RGR and the RGW
+    code = [
+        b"\x00\x11", R_MAP["PC"].to_bytes(2, byteorder="big"),  # rgr R7
+        b"\x00\x30", b"\x00\x0c",  # add 10
+        b"\x00\x10", R_MAP["R7"].to_bytes(2, byteorder="big"),  # rgw R7
+        b"\x00\x20", pl  # jmpl label
+    ]
+
+    return code
 
 
 def compile_ret(line: str):
     # fmt: `ret`
     # RETurn from jump
     # This will jump to the address specified in `R7`.
-    return [b"\x00\x22\x00\x00"]
+
+    # this is NOT a real instruction!
+    # it compiles to `rgr R7; jmpa`
+
+    code = [
+        b"\x00\x11", R_MAP["R7"].to_bytes(2, byteorder="big"),
+        b"\x00\x23\x00\x00"
+    ]
+
+    return code
 
 
 def compile_jmpa(line: str):
@@ -115,6 +144,20 @@ def compile_jmpa(line: str):
     # JuMP Absolute. This will jump to the absolute address, specified by TOS.
     # It is very rare that this is needed; a JMPL or JMPR will often be better.
     return [b"\x00\x23\x00\x00"]
+
+
+# math operations
+def compile_add(line: str):
+    # fmt: `add [val]`
+    # if val is not specified, it will load from the stack
+    if line:
+        val = int(line, 0).to_bytes(length=2, byteorder="big")
+    else:
+        # special value means LOAD FROM STACK
+        # adding 0 would be a no-op otherwise
+        val = b"\x00\x00"
+
+    return [b"\x00\x30", val]
 
 
 def kl27_compile(args: argparse.Namespace):
@@ -225,15 +268,16 @@ def kl27_compile(args: argparse.Namespace):
         if func not in glob:
             print(f"error: line {lineno}: in label {current_label}:\n\t unknown instruction `{instruction}`.")
             return 1
-        print(f"compiling instruction {instruction} at address {current_pointer} inside {current_label}")
+        print(f"compiling instruction {instruction} at address {hex(current_pointer)} inside {current_label}")
 
         f = glob[func]
         # call with the rest of the line to parse and construct
         instructions = f(" ".join(line.split(" ")[1:]))
         code.extend(instructions)
 
-        # increment the pointer by 4
-        current_pointer += 4
+        # increment the pointer by the length of instructions produced
+        to_incr = sum(len(x) for x in instructions)
+        current_pointer += to_incr
 
     print("\nlabel table:")
     pprint.pprint(label_table)
