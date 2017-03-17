@@ -131,13 +131,13 @@ class MainWindow(assembledFile: String) : ApplicationAdapter(), InputProcessor {
             run {
                 var v = "empty"
                 try {
-                    val got = stack.get(i)
+                    val got = stack[i]
                     v = "0x${got.toString(16)}"
                 }
                 catch (err: IndexOutOfBoundsException) {}
                 val where = (330 + (i * 15)).toFloat()
                 this.mainFont.draw(batch,
-                        "- #$i --> ${v}",
+                        "- #$i --> $v",
                         10f, where)
             }
         }

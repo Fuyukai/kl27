@@ -39,6 +39,11 @@ val opcodeMap: Map<Int, String> = mapOf(
 // 6 - register write
 data class Action(val type: Int, val first: Int, val second: Int? = null)
 
+class CPUSignal : Exception {
+    constructor(message: String) : super(message)
+    constructor() : super()
+}
+
 class CPU(f: K27File) {
     // The current cycle count of the CPU.
     // This is incremented once for every instruction executed.
@@ -50,7 +55,7 @@ class CPU(f: K27File) {
     // The current executed memory system.
     val memory = MMU()
     // The registers for this CPU.
-    val registers: Array<Register> = Array(8, { i -> Register(bittiness = 16) })
+    val registers: Array<Register> = Array(8, { Register(bittiness = 16) })
 
     // Special registers:
     // The program counter, which is the current address.
@@ -138,9 +143,36 @@ class CPU(f: K27File) {
      */
     fun popStack(): Int {
         if (this.stack.size <= 0)
-            throw RuntimeException("Stack underflow")
+            throw CPUSignal("Stack underflow")
 
         return this.stack.remove()
+    }
+
+    fun readFromReg(regIndex: Int): Int {
+        val reg = when(regIndex) {
+            in 0..7 -> this.registers[regIndex]
+            8 -> this.MAR
+            9 -> this.MVR
+            10 -> this.programCounter
+            else -> { this.error("Unknown register"); throw CPUSignal() }
+        }
+
+        return reg.value
+    }
+
+    /**
+     * Writes to the specified register, by index.
+     */
+    fun writeToReg(regIndex: Int, value: Int) {
+        val reg = when(regIndex) {
+            in 0..7 -> this.registers[regIndex]
+            8 -> this.MAR
+            9 -> this.MVR
+            10 -> { this.error("Cannot write to PC"); throw CPUSignal() }
+            else -> { this.error("Unknown register"); throw CPUSignal() }
+        }
+
+        reg.value = value
     }
 
     /**
@@ -205,23 +237,22 @@ class CPU(f: K27File) {
                 // pops TOS and writes it to register
                 this.recentActions.add(Action(2, 1))
                 try {
-                    val TOS = this.popStack(); this.registers[instruction.opval.toInt()].value = TOS
+                    val TOS = this.popStack()
+                    this.writeToReg(instruction.opval.toInt(), TOS)
                     this.recentActions.add(Action(6, instruction.opval.toInt(), TOS))
                 }
-                catch (err: RuntimeException) {
-                    this.error("Stack underflow")
-                }
+                catch (err: CPUSignal) {}
             }
             0x11 -> {
                 // RGR, register read
                 // reads from the register and copies it to the stack
-                val toPush = this.registers[instruction.opval.toInt()].value
-                try { this.pushStack(toPush) }
-                catch (err: StackOverflowError) {
-                    this.error("Stack overflow")
+                try {
+                    val toPush = this.readFromReg(instruction.opval.toInt())
+                    this.recentActions.add(Action(1, toPush))
+                    this.pushStack(toPush)
                 }
+                catch (err: CPUSignal) {}
                 this.recentActions.add(Action(5, instruction.opval.toInt()))
-                this.recentActions.add(Action(1, toPush))
             }
             0x20 -> {
                 // JMPL, jump to label
@@ -264,7 +295,7 @@ class CPU(f: K27File) {
                     this.recentActions.add(Action(0, this.programCounter.value - 4, offset))
                     this.programCounter.value = offset
                 }
-                catch (err: StackOverflowError) { this.error("Stack overflow") }
+                catch (err: CPUSignal) {}
             }
             else ->
                 // unknown opcode
