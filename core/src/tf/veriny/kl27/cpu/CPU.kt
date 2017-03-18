@@ -26,7 +26,12 @@ val opcodeMap: Map<Int, String> = mapOf(
         0x20 to "jmpl",
         0x21 to "jmpr",
         0x22 to "ret",
-        0x23 to "jmpa"
+        0x23 to "jmpa",
+        // math
+        0x30 to "add",
+        0x31 to "sub",
+        0x32 to "mul",
+        0x33 to "div"
 )
 
 // ACTION MAPPING:
