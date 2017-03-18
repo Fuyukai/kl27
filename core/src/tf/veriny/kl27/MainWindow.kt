@@ -55,11 +55,11 @@ class MainWindow(assembledFile: String) : ApplicationAdapter(), InputProcessor {
 
         // create the fonts required
         // we use a size 8 DejaVu Sans Mono for the info
-        val fntGenerator = FreeTypeFontGenerator(Gdx.files.internal("overpass.otf"))
+        val fntGenerator = FreeTypeFontGenerator(Gdx.files.internal("dejavu.ttf"))
         val fntParam = FreeTypeFontGenerator.FreeTypeFontParameter()
         // flip b/c camera is flipped
         fntParam.flip = true
-        fntParam.size = 12
+        fntParam.size = 13
         // create the coloured fonts
         this.mainFont = fntGenerator.generateFont(fntParam)
         this.regFont = fntGenerator.generateFont(fntParam)
@@ -70,7 +70,7 @@ class MainWindow(assembledFile: String) : ApplicationAdapter(), InputProcessor {
         val dbgFntParam = FreeTypeFontGenerator.FreeTypeFontParameter()
         dbgFntParam.flip = true
         dbgFntParam.size = 15
-        val dbgFntGen = FreeTypeFontGenerator(Gdx.files.internal("dejavu.ttf"))
+        val dbgFntGen = FreeTypeFontGenerator(Gdx.files.internal("overpass.otf"))
         this.dbgFont = dbgFntGen.generateFont(dbgFntParam)
         this.errFont = fntGenerator.generateFont(dbgFntParam)
         this.errFont.color = Color.RED
