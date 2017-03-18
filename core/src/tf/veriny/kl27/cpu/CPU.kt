@@ -19,6 +19,7 @@ val opcodeMap: Map<Int, String> = mapOf(
         // stack
         0x02 to "sl",
         0x03 to "spop",
+        0x04 to "llbl",
         // register
         0x10 to "rgw",
         0x11 to "rgr",
@@ -159,6 +160,9 @@ class CPU(f: K27File) {
         return this.stack.removeLast()
     }
 
+    /**
+     * Reads from the specified register, by index.
+     */
     fun readFromReg(regIndex: Int): Int {
         val reg = when(regIndex) {
             in 0..7 -> this.registers[regIndex]
@@ -188,6 +192,20 @@ class CPU(f: K27File) {
         this.recentActions.add(Action(6, regIndex, value))
 
         reg.value = value
+    }
+
+    /**
+     * Jumps to the specified offset.
+     *
+     * This will ensure the location is after 0x1000.
+     */
+    fun jump(offset: Int) {
+        // clamp to >0x1000
+        val final: Int = if (offset < 0x1000) 0x1000 + offset else offset
+        // add the jump action
+        this.recentActions.add(Action(0, this.programCounter.value, final))
+        // finally update the PC to jump to the new location
+        this.programCounter.value = final
     }
 
     /**
@@ -230,53 +248,40 @@ class CPU(f: K27File) {
             0x02 -> {
                 // SL, stack l(oad|literal)
                 // loads a literal onto the stack
-                try { this.pushStack(instruction.opval.toInt()) }
-                catch (err: CPUSignal) {}
+                this.pushStack(instruction.opval.toInt())
             }
             0x03 -> {
                 // SPOP, stack pop
                 // pops <x> items from the top of the stack
-                try { (0..instruction.opval - 1).forEach { this.popStack() } }
-                catch (err: CPUSignal) {}
+                (0..instruction.opval - 1).forEach { this.popStack() }
+            }
+            0x04 -> {
+                // LLBL, load label
+                // loads the label offset onto the stack
+                // used for jmpl later
+                val offset = this.memory.getLabelOffset(instruction.opval)
+                this.pushStack(offset)
             }
             0x10 -> {
                 // RGW, register write
                 // pops TOS and writes it to register
-                try {
-                    val TOS = this.popStack()
-                    this.writeToReg(instruction.opval.toInt(), TOS)
-                }
-                catch (err: CPUSignal) {}
+                val TOS = this.popStack()
+                this.writeToReg(instruction.opval.toInt(), TOS)
             }
             0x11 -> {
                 // RGR, register read
                 // reads from the register and copies it to the stack
-                try {
-                    val toPush = this.readFromReg(instruction.opval.toInt())
-                    this.pushStack(toPush)
-                }
-                catch (err: CPUSignal) {}
+                val toPush = this.readFromReg(instruction.opval.toInt())
+                this.pushStack(toPush)
             }
-            0x20 -> {
-                // JMPL, jump to label
-                val offset = this.memory.getLabelOffset(instruction.opval)
-                // we need to set it to 0x01000 + offset
-                // otherwise it tries to execute the label table
-                val newOffset = 0x01000 + offset
-                this.recentActions.add(Action(0, this.programCounter.value - 4, newOffset))
-                this.programCounter.value = newOffset
-            }
+            // 0x12 through 0x22 unused
             0x23 -> {
                 // JMPA, jump absolute
-                this.recentActions.add(Action(2, 1))
-                try {
-                    val TOS = this.popStack()
-                    // make sure it 's above 0x01000
-                    val offset = if (TOS < 0x01000) 0x01000 + TOS else TOS
-                    this.programCounter.value = offset
-                }
-                catch (err: CPUSignal) {}
+                val TOS = this.popStack()
+                // jump to top of stack
+                this.jump(TOS)
             }
+            // 0x24 through 0x2f unused
             // math
             0x30 -> {
                 // ADD, addition
@@ -287,7 +292,6 @@ class CPU(f: K27File) {
                 } else {
                     toAdd = instruction.opval.toInt()
                 }
-                println(toAdd)
                 val final = this.popStack() + toAdd
                 this.pushStack(final)
             }

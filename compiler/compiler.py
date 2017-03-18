@@ -18,6 +18,9 @@ import sys
 
 
 # the jump resolver
+from collections import OrderedDict
+
+
 class LabelPlaceholder:
     def __init__(self, label_name: str):
         self.label_name = label_name
@@ -75,6 +78,16 @@ def compile_spop(line: str):
     return [b"\x00\x03", val.to_bytes(2, byteorder="big")]
 
 
+def compile_llbl(line: str):
+    # fmt: `llbl <label>`
+    # loads the address of a label onto the stack
+    pl = LabelPlaceholder(line)
+
+    return [
+        b"\x00\x04", pl
+    ]
+
+
 # register operations
 def compile_rgw(line: str):
     # fmt: `rgw <reg>`
@@ -96,9 +109,14 @@ def compile_rgr(line: str):
 def compile_jmpl(line: str):
     # fmt: `jmpl <label>`
     # JuMP Label. This will jump to the specified label.
+    # this is NOT a real instruction!
+    # it compiles to `llbl <label>; jmpa`.
+
     pl = LabelPlaceholder(line)
-    return [
-        b"\x00\x20", pl
+
+    code = [
+        b"\x00\x04", pl,  # llbl label
+        b"\x00\x23", b"\x00\x00"  # jump absolute
     ]
 
 
@@ -115,9 +133,10 @@ def compile_jmpr(line: str):
     # emit the RGR and the RGW
     code = [
         b"\x00\x11", R_MAP["PC"].to_bytes(2, byteorder="big"),  # rgr R7
-        b"\x00\x30", b"\x00\x0c",  # add 10
+        b"\x00\x30", b"\x00\x10",  # add 16
         b"\x00\x10", R_MAP["R7"].to_bytes(2, byteorder="big"),  # rgw R7
-        b"\x00\x20", pl  # jmpl label
+        b"\x00\x04", pl,  # llbl label
+        b"\x00\x23", b"\x00\x00"  # jump absolute
     ]
 
     return code
@@ -133,7 +152,7 @@ def compile_ret(line: str):
 
     code = [
         b"\x00\x11", R_MAP["R7"].to_bytes(2, byteorder="big"),
-        b"\x00\x23\x00\x00"
+        b"\x00\x23", b"\x00\x00"
     ]
 
     return code
@@ -169,7 +188,7 @@ def kl27_compile(args: argparse.Namespace):
     # current offset
     current_pointer = 0
     # label to address mapping
-    label_table = {}
+    label_table = OrderedDict()
     # machine code memory
     code = []
     # current includes table
@@ -307,17 +326,30 @@ def kl27_compile(args: argparse.Namespace):
 
     final_label_table = b"".join(final_label_table)
 
+    resolved_labels = set()
+
     def fix_jumps():
         loop_code = code.copy()
 
         for n, i in enumerate(loop_code):
             if isinstance(i, LabelPlaceholder):
-                print("resolving jump for", i.label_name, "to", label_table[i.label_name])
+                print(f"resolving jump for `{i.label_name}` to `{hex(label_table[i.label_name][1])}`")
                 # replace it with the resolved
                 code[n] = i.resolve(label_table)
+                resolved_labels.add(i.label_name)
 
     print("\nfixing jumps...")
     fix_jumps()
+
+    print()
+    # check to see if any labels were unused
+    for label in label_table:
+        if label == args.entry_point:
+            continue
+
+        if label not in resolved_labels:
+            print(f"warning: unused label `{label}`")
+
     final_code = b"".join(code)
 
     print("instructions parsed (est.):", len(final_code) // 4)

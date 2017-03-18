@@ -186,22 +186,22 @@ class MainWindow(assembledFile: String) : ApplicationAdapter(), InputProcessor {
 
                     // memory read
                     3 -> this.jumpFont.draw(this.batch,
-                            "M: R 0x${action.first.toString(16)}",
+                            "M: READ 0x${action.first.toString(16)}",
                             435f, where)
 
                     // memory write
                     4 -> this.jumpFont.draw(this.batch,
-                            "M: W 0x${action.second!!.toString(16)} --> #${action.first}",
+                            "M: WRITE 0x${action.second!!.toString(16)} --> #${action.first}",
                             435f, where)
 
                     // register read
                     5 -> this.jumpFont.draw(this.batch,
-                            "R: R #${action.first}",
+                            "R: READ #${action.first}",
                             435f, where)
 
                     // register write
                     6 -> this.jumpFont.draw(this.batch,
-                            "R: W 0x${action.second!!.toString(16)} --> #${action.first}",
+                            "R: WRITE 0x${action.second!!.toString(16)} --> #${action.first}",
                             435f, where)
 
                     // all unknown values

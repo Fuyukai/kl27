@@ -1,7 +1,9 @@
 // Compiler test file
 
 main:
-	jmpl program
+	jmpr program
+	hlt
 
 program:
-	hlt
+	sl 2
+	ret
