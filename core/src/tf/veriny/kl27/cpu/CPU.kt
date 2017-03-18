@@ -266,27 +266,6 @@ class CPU(f: K27File) {
                 this.recentActions.add(Action(0, this.programCounter.value - 4, newOffset))
                 this.programCounter.value = newOffset
             }
-            0x21 -> {
-                // JMPR, jump return
-                val offset = this.memory.getLabelOffset(instruction.opval)
-                val newOffset = 0x01000 + offset
-                // copy the current PC onto R7
-                this.writeToReg(7, this.programCounter.value)
-                // update the PC value to the place we want to jump
-                this.recentActions.add(Action(0, this.programCounter.value - 4, newOffset))
-                this.programCounter.value = newOffset
-            }
-            0x22 -> {
-                // RET, return from JMPR
-                // this will jump to the location specified in R7
-                // it is a shorthand instruction for:
-                //  rgr R7
-                //  jmpa
-                val pcVal = this.registers[0x7].value
-                val final = if (pcVal < 0x1000) pcVal + 0x1000 else pcVal
-                this.recentActions.add(Action(0, this.programCounter.value -4, this.registers[0x7].value))
-                this.programCounter.value = final
-            }
             0x23 -> {
                 // JMPA, jump absolute
                 this.recentActions.add(Action(2, 1))
