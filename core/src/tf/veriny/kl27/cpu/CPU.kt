@@ -61,7 +61,7 @@ class CPU(f: K27File) {
     // The current executed memory system.
     val memory = MMU()
     // The registers for this CPU.
-    val registers: Array<Register> = Array(8, { Register(bittiness = 16) })
+    val registers: Array<Register> = Array(8, { Register(bittiness = 32) })
 
     // Special registers:
     // The program counter, which is the current address.
@@ -69,7 +69,7 @@ class CPU(f: K27File) {
     // The memory address register.
     val MAR = Register(bittiness = 32)
     // The memory value register.
-    val MVR = Register(bittiness = 16)
+    val MVR = Register(bittiness = 32)
 
     // The stack.
     val stack: ArrayDeque<Int>

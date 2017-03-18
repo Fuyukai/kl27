@@ -18,7 +18,7 @@ data class Instruction(val address: Int, val opcode: Short, val opval: Short)
  */
 class MMU {
     // allocate a 2MiB ByteArray for main memory
-    private var mainMemory = ByteArray(0x200000)
+    private var mainMemory = ByteArray(0x1000000)
 
     /**
      * Reads a single 8-bit integer from memory.
@@ -35,6 +35,13 @@ class MMU {
     fun read16(offset: Int): Short {
         // probably fast enough lol
         return ByteBuffer.wrap(this.mainMemory.copyOfRange(offset, offset + 2)).short
+    }
+
+    /**
+     * Reads a single 32-bit integer from memory.
+     */
+    fun read32(offset: Int) : Int {
+        return ByteBuffer.wrap(this.mainMemory.copyOfRange(offset, offset + 5)).int
     }
 
     /**

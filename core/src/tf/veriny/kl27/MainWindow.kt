@@ -55,11 +55,11 @@ class MainWindow(assembledFile: String) : ApplicationAdapter(), InputProcessor {
 
         // create the fonts required
         // we use a size 8 DejaVu Sans Mono for the info
-        val fntGenerator = FreeTypeFontGenerator(Gdx.files.internal("dejavu.ttf"))
+        val fntGenerator = FreeTypeFontGenerator(Gdx.files.internal("overpass.otf"))
         val fntParam = FreeTypeFontGenerator.FreeTypeFontParameter()
         // flip b/c camera is flipped
         fntParam.flip = true
-        fntParam.size = 13
+        fntParam.size = 12
         // create the coloured fonts
         this.mainFont = fntGenerator.generateFont(fntParam)
         this.regFont = fntGenerator.generateFont(fntParam)
@@ -69,8 +69,9 @@ class MainWindow(assembledFile: String) : ApplicationAdapter(), InputProcessor {
 
         val dbgFntParam = FreeTypeFontGenerator.FreeTypeFontParameter()
         dbgFntParam.flip = true
-        dbgFntParam.size = 16
-        this.dbgFont = fntGenerator.generateFont(dbgFntParam)
+        dbgFntParam.size = 15
+        val dbgFntGen = FreeTypeFontGenerator(Gdx.files.internal("dejavu.ttf"))
+        this.dbgFont = dbgFntGen.generateFont(dbgFntParam)
         this.errFont = fntGenerator.generateFont(dbgFntParam)
         this.errFont.color = Color.RED
 
@@ -154,11 +155,11 @@ class MainWindow(assembledFile: String) : ApplicationAdapter(), InputProcessor {
                     this.dbgFont.draw(this.batch,
                             "E: ${opcodeMap.getOrDefault(ins.opcode.toInt(), default)}, " +
                                     "0x${ins.opval.toString(16)} at 0x${ins.address.toString(16)}",
-                            180f, (40 + (20 * i)).toFloat())
+                            155f, (40 + (20 * i)).toFloat())
                 } else {
                     this.errFont.draw(this.batch,
                             "X: ${cpu.lastError}",
-                            180f, (40 + (20 * i)).toFloat())
+                            155f, (40 + (20 * i)).toFloat())
                 }
             }
         }
@@ -172,42 +173,42 @@ class MainWindow(assembledFile: String) : ApplicationAdapter(), InputProcessor {
                     // jump
                     0 -> this.jumpFont.draw(this.batch,
                             "J: 0x${action.first.toString(16)} --> 0x${action.second!!.toString(16)}",
-                            435f, where)
+                            400f, where)
 
                     // stack push
                     1 -> this.jumpFont.draw(this.batch,
                             "S: PUSH 0x${action.first.toString(16)}",
-                            435f, where)
+                            400f, where)
 
                     // stack pop
                     2 -> this.jumpFont.draw(this.batch,
                             "S: POP #${action.first}",
-                            435f, where)
+                            400f, where)
 
                     // memory read
                     3 -> this.jumpFont.draw(this.batch,
                             "M: READ 0x${action.first.toString(16)}",
-                            435f, where)
+                            400f, where)
 
                     // memory write
                     4 -> this.jumpFont.draw(this.batch,
                             "M: WRITE 0x${action.second!!.toString(16)} --> #${action.first}",
-                            435f, where)
+                            400f, where)
 
                     // register read
                     5 -> this.jumpFont.draw(this.batch,
                             "R: READ #${action.first}",
-                            435f, where)
+                            400f, where)
 
                     // register write
                     6 -> this.jumpFont.draw(this.batch,
                             "R: WRITE 0x${action.second!!.toString(16)} --> #${action.first}",
-                            435f, where)
+                            400f, where)
 
                     // all unknown values
                     else -> this.jumpFont.draw(this.batch,
                             "X: UNKNOWN ACTION",
-                            435f, where)
+                            400f, where)
                 }
             }
         }

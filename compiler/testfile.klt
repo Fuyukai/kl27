@@ -2,7 +2,8 @@
 
 main:
 	jmpr program
-	hlt
+	sl 2947
+	jmpa
 
 program:
 	sl 2
