@@ -169,7 +169,7 @@ class CPU(f: K27File) {
             8 -> this.MAR
             9 -> this.MVR
             10 -> this.programCounter
-            else -> { this.error("Unknown register") }
+            else -> this.error("Unknown register")
         } as Register
 
         this.recentActions.add(Action(5, regIndex))
@@ -185,8 +185,8 @@ class CPU(f: K27File) {
             in 0..7 -> this.registers[regIndex]
             8 -> this.MAR
             9 -> this.MVR
-            10 -> { this.error("Cannot write to PC") }
-            else -> { this.error("Unknown register") }
+            10 -> this.error("Cannot write to PC")
+            else -> this.error("Unknown register")
         } as Register
 
         this.recentActions.add(Action(6, regIndex, value))

@@ -16,7 +16,6 @@ import shlex
 import struct
 import sys
 
-
 # the jump resolver
 from collections import OrderedDict
 
@@ -132,7 +131,7 @@ def compile_jmpr(line: str):
 
     # emit the RGR and the RGW
     code = [
-        b"\x00\x11", R_MAP["PC"].to_bytes(2, byteorder="big"),  # rgr R7
+        b"\x00\x11", R_MAP["PC"].to_bytes(2, byteorder="big"),  # rgr PC
         b"\x00\x30", b"\x00\x10",  # add 16
         b"\x00\x10", R_MAP["R7"].to_bytes(2, byteorder="big"),  # rgw R7
         b"\x00\x04", pl,  # llbl label
