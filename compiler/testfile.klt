@@ -1,10 +1,4 @@
 // Compiler test file
 
 main:
-	jmpr program
-	sl 2947
-	jmpa
-
-program:
-	sl 2
-	ret
+	sl 39547365

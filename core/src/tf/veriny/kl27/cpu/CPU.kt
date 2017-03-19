@@ -20,6 +20,7 @@ val opcodeMap: Map<Int, String> = mapOf(
         0x02 to "sl",
         0x03 to "spop",
         0x04 to "llbl",
+        0x05 to "slh",
         // register
         0x10 to "rgw",
         0x11 to "rgr",
@@ -261,6 +262,16 @@ class CPU(f: K27File) {
                 // used for jmpl later
                 val offset = this.memory.getLabelOffset(instruction.opval)
                 this.pushStack(offset)
+            }
+            0x05 -> {
+                // SLH, Stack Load High
+                // sets the upper 16 bits of the number on the stack
+
+                // shift the opval right 16 bits, then OR it with TOS
+                // this will copy the bottom bits onto the stack
+                val TOS = this.popStack()
+                val final = (instruction.opval.toInt() shl 16) or TOS
+                this.pushStack(final)
             }
             0x10 -> {
                 // RGW, register write

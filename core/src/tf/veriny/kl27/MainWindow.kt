@@ -155,11 +155,11 @@ class MainWindow(assembledFile: String) : ApplicationAdapter(), InputProcessor {
                     this.dbgFont.draw(this.batch,
                             "E: ${opcodeMap.getOrDefault(ins.opcode.toInt(), default)}, " +
                                     "0x${ins.opval.toString(16)} at 0x${ins.address.toString(16)}",
-                            155f, (40 + (20 * i)).toFloat())
+                            175f, (40 + (20 * i)).toFloat())
                 } else {
                     this.errFont.draw(this.batch,
                             "X: ${cpu.lastError}",
-                            155f, (40 + (20 * i)).toFloat())
+                            175f, (40 + (20 * i)).toFloat())
                 }
             }
         }
@@ -173,42 +173,42 @@ class MainWindow(assembledFile: String) : ApplicationAdapter(), InputProcessor {
                     // jump
                     0 -> this.jumpFont.draw(this.batch,
                             "J: 0x${action.first.toString(16)} --> 0x${action.second!!.toString(16)}",
-                            400f, where)
+                            420f, where)
 
                     // stack push
                     1 -> this.jumpFont.draw(this.batch,
                             "S: PUSH 0x${action.first.toString(16)}",
-                            400f, where)
+                            420f, where)
 
                     // stack pop
                     2 -> this.jumpFont.draw(this.batch,
                             "S: POP #${action.first}",
-                            400f, where)
+                            420f, where)
 
                     // memory read
                     3 -> this.jumpFont.draw(this.batch,
                             "M: READ 0x${action.first.toString(16)}",
-                            400f, where)
+                            420f, where)
 
                     // memory write
                     4 -> this.jumpFont.draw(this.batch,
                             "M: WRITE 0x${action.second!!.toString(16)} --> #${action.first}",
-                            400f, where)
+                            420f, where)
 
                     // register read
                     5 -> this.jumpFont.draw(this.batch,
                             "R: READ #${action.first}",
-                            400f, where)
+                            420f, where)
 
                     // register write
                     6 -> this.jumpFont.draw(this.batch,
                             "R: WRITE 0x${action.second!!.toString(16)} --> #${action.first}",
-                            400f, where)
+                            420f, where)
 
                     // all unknown values
                     else -> this.jumpFont.draw(this.batch,
                             "X: UNKNOWN ACTION",
-                            400f, where)
+                            420f, where)
                 }
             }
         }

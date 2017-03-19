@@ -63,6 +63,15 @@ def compile_sl(line: str):
     # fmt: `sl <int>`
     # puts a literal on the stack
     val = int(line, 0)
+
+    if val > 0xff:
+        # we need to emit two instructions: `sl <lower>`, then `slh <upper>`.
+        upper, lower = struct.unpack(">2H", struct.pack(">I", val))
+        return [
+            b"\x00\x02", lower.to_bytes(2, byteorder="big"),   # lower bits
+            b"\x00\x05", upper.to_bytes(2, byteorder="big")  # higher bits
+        ]
+
     return [b"\x00\x02", val.to_bytes(2, byteorder="big")]
 
 
