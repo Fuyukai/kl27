@@ -15,8 +15,9 @@ import pprint
 import shlex
 import struct
 import sys
-
 # the jump resolver
+import zlib
+
 from collections import OrderedDict
 
 
@@ -374,8 +375,8 @@ def kl27_compile(args: argparse.Namespace):
     header += [entry.to_bytes(4, byteorder="big")]
     # 5: K_STACKSIZE
     header += [(4).to_bytes(2, byteorder="big")]
-    # 6: K_CHECKSUM, ignore this for now
-    header += [b"\x00\x00\x00\x00"]
+    # 6: K_CHECKSUM
+    header += [zlib.crc32(final_code).to_bytes(4, byteorder="big")]
     header = b"".join(header)
 
     with open(args.outfile, 'wb') as out:
