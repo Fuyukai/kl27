@@ -220,6 +220,7 @@ def kl27_compile(args: argparse.Namespace):
             if not firstline[0:3] == "#ID":
                 print(f"warning: included file '{second}' does not have an ID directive.\n"
                       f"\tThis file could potentially be included multiple times.")
+                f.seek(0)
             else:
                 id = " ".join(firstline.split(" ")[1:])
                 if id in includes:
