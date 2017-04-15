@@ -1,6 +1,10 @@
 // Compiler test file
 
 main:
-	sl 39547365
+	sl 1
+	rgw mar
+	sl 10
+	rgw mvr
+	mmr
 
-aaaa
+	//
