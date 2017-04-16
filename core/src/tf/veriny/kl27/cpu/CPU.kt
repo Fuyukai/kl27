@@ -24,6 +24,8 @@ val opcodeMap: Map<Int, String> = mapOf(
         // register
         0x10 to "rgw",
         0x11 to "rgr",
+        0x12 to "mmr",
+        0x13 to "mmw",
         // jumps
         0x20 to "jmpl",
         0x21 to "jmpr",
@@ -31,8 +33,8 @@ val opcodeMap: Map<Int, String> = mapOf(
         0x23 to "jmpa",
         // math
         0x30 to "add",
-        0x31 to "sub",
-        0x32 to "mul",
+        0x31 to "mul",
+        0x32 to "sub",
         0x33 to "div"
 )
 
@@ -234,6 +236,8 @@ class CPU(f: K27File) {
         // add to the end of the queue for the main app to poll off of
         this.instructionQueue.add(instruction)
 
+        //println(this.MVR.value)
+
         // MAIN INTERPRETER BLOCK
         // This runs the actual code.
         //println(instruction.opcode.toString())
@@ -285,6 +289,22 @@ class CPU(f: K27File) {
                 val toPush = this.readFromReg(instruction.opval.toInt())
                 this.pushStack(toPush)
             }
+            0x12 -> {
+                // MMR, memory read
+                // reads from the value specified by the MAR
+                // puts data into the MVR
+                val addr = this.readFromReg(0x08)
+                val memoryValue = this.memory.read32(addr)
+                this.writeToReg(0x09, memoryValue)
+            }
+            0x13 -> {
+                // MMW, memory write
+                // reads from value in MVR
+                // puts data into memory at address in MAR
+                val addr = this.readFromReg(0x08)
+                val memoryValue = this.readFromReg(0x09)
+                this.memory.write32(addr, memoryValue)
+            }
             // 0x12 through 0x22 unused
             0x23 -> {
                 // JMPA, jump absolute
@@ -296,7 +316,7 @@ class CPU(f: K27File) {
             // math
             0x30 -> {
                 // ADD, addition
-                var toAdd: Int
+                val toAdd: Int
                 if (instruction.opval.toInt() == 0) {
                     // pop from stack
                     toAdd = this.popStack()
@@ -304,6 +324,11 @@ class CPU(f: K27File) {
                     toAdd = instruction.opval.toInt()
                 }
                 val final = this.popStack() + toAdd
+                this.pushStack(final)
+            }
+            0x31 -> {
+                // MUL, multiply
+                val final = this.popStack() * instruction.opval
                 this.pushStack(final)
             }
             else ->

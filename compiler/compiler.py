@@ -65,12 +65,16 @@ def compile_sl(line: str):
     # puts a literal on the stack
     val = int(line, 0)
 
-    if val > 0xff:
-        # we need to emit two instructions: `sl <lower>`, then `slh <upper>`.
-        upper, lower = struct.unpack(">2H", struct.pack(">I", val))
+    if val > 0xffff:
+        # figure out how many times we need to multiply it by 32767
+        # then ADD the remainder
+        mul_amount = val // 0x7fff
+        print(mul_amount)
+        remainder = val % 0x7fff
         return [
-            b"\x00\x02", lower.to_bytes(2, byteorder="big"),   # lower bits
-            b"\x00\x05", upper.to_bytes(2, byteorder="big")  # higher bits
+            b"\x00\x02", mul_amount.to_bytes(2, byteorder="big"),  # stack load the amount to multiply
+            b"\x00\x31", b"\x7f\xff"  # multiply by 65535,
+            b"\x00\x30", remainder.to_bytes(2, byteorder="big")  # add reminader
         ]
 
     return [b"\x00\x02", val.to_bytes(2, byteorder="big")]
@@ -113,6 +117,15 @@ def compile_rgr(line: str):
 
     return [b"\x00\x11", R_MAP[reg].to_bytes(2, byteorder="big")]
 
+def compile_mmr(line: str):
+    # fmt: `mmr`
+    # reads from memory into the MVR with the address specified by the MAR
+    return [b"\x00\x12\x00\x00"]
+
+def compile_mmw(line: str):
+    # fmt: `mmw`
+    # writes from memory from the MVR to memory with the address specified by the MAR
+    return [b"\x00\x13\x00\x00"]
 
 # jump operations
 def compile_jmpl(line: str):
@@ -186,6 +199,13 @@ def compile_add(line: str):
         val = b"\x00\x00"
 
     return [b"\x00\x30", val]
+
+def compile_mul(line: str):
+    # fmt: `mul <val>`
+    # multiples TOS by the value provided
+    val = int(line, 0).to_bytes(length=2, byteorder="big")
+
+    return [b"\x00\x31", val]
 
 
 def kl27_compile(args: argparse.Namespace):

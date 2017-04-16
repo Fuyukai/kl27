@@ -19,7 +19,7 @@ class Register(bittiness: Int = 16) {
 
     // An accessible version of the internal value.
     var value: Int
-        get() = (this.internalValue shl this.bittiness) shr this.bittiness
+        get() = this.internalValue
         set(v) {
             this.internalValue = v
         }

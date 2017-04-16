@@ -82,7 +82,12 @@ class MMU {
      */
     fun write16(offset: Int, value: Int) {
         this.mainMemory[offset] = (value shr 8).toByte()
-        this.mainMemory[offset] = value.toByte()
+        this.mainMemory[offset + 1] = value.toByte()
+    }
+
+    fun write32(offset: Int, value: Int) {
+        val buf = ByteBuffer.allocate(4).putInt(value).array()
+        buf.forEachIndexed { index, byte -> this.mainMemory[offset + index] = byte }
     }
 
 }
