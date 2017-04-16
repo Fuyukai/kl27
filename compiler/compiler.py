@@ -73,8 +73,10 @@ def compile_sl(line: str):
         remainder = val % 0x7fff
         return [
             b"\x00\x02", mul_amount.to_bytes(2, byteorder="big"),  # stack load the amount to multiply
-            b"\x00\x31", b"\x7f\xff"  # multiply by 65535,
-            b"\x00\x30", remainder.to_bytes(2, byteorder="big")  # add reminader
+            b"\x00\x02", b"\x7f\xff",  # stack load 32767
+            b"\x00\x31", b"\x00\x00",  # call the multiplication op
+            b"\x00\x02", remainder.to_bytes(2, byteorder="big"),  # load remainder
+            b"\x00\x30", b"\x00\x00"   # call the addition op
         ]
 
     return [b"\x00\x02", val.to_bytes(2, byteorder="big")]
@@ -191,21 +193,28 @@ def compile_jmpa(line: str):
 def compile_add(line: str):
     # fmt: `add [val]`
     # if val is not specified, it will load from the stack
+    ins = []
     if line:
         val = int(line, 0).to_bytes(length=2, byteorder="big")
-    else:
-        # special value means LOAD FROM STACK
-        # adding 0 would be a no-op otherwise
-        val = b"\x00\x00"
+        ins.extend([b"\x00\x02", val])
 
-    return [b"\x00\x30", val]
+    return ins + [b"\x00\x30\x00\x00"]
 
+# im not 100% mean
+# so I do actually allow a multiplication op
+# rather than forcing multiple adds
 def compile_mul(line: str):
     # fmt: `mul <val>`
     # multiples TOS by the value provided
-    val = int(line, 0).to_bytes(length=2, byteorder="big")
+    # if no value is provided, it will use TOS
+    instruction = []
 
-    return [b"\x00\x31", val]
+    if line:
+        val = int(line, 0).to_bytes(length=2, byteorder="big")
+        instruction.extend(b"\x00\x02", int(line))
+
+    instruction.extend([b"\x00\x30"])
+    return instruction
 
 
 def kl27_compile(args: argparse.Namespace):

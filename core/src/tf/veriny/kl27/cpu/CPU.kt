@@ -267,16 +267,6 @@ class CPU(f: K27File) {
                 val offset = this.memory.getLabelOffset(instruction.opval)
                 this.pushStack(offset)
             }
-            0x05 -> {
-                // SLH, Stack Load High
-                // sets the upper 16 bits of the number on the stack
-
-                // shift the opval right 16 bits, then OR it with TOS
-                // this will copy the bottom bits onto the stack
-                val TOS = this.popStack()
-                val final = (instruction.opval.toInt() shl 16) or TOS
-                this.pushStack(final)
-            }
             0x10 -> {
                 // RGW, register write
                 // pops TOS and writes it to register
@@ -316,19 +306,11 @@ class CPU(f: K27File) {
             // math
             0x30 -> {
                 // ADD, addition
-                val toAdd: Int
-                if (instruction.opval.toInt() == 0) {
-                    // pop from stack
-                    toAdd = this.popStack()
-                } else {
-                    toAdd = instruction.opval.toInt()
-                }
-                val final = this.popStack() + toAdd
+                val final = this.popStack() + this.popStack()
                 this.pushStack(final)
             }
             0x31 -> {
-                // MUL, multiply
-                val final = this.popStack() * instruction.opval
+                val final = this.popStack() * this.popStack()
                 this.pushStack(final)
             }
             else ->
