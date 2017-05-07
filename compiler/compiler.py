@@ -15,7 +15,6 @@ import pprint
 import shlex
 import struct
 import sys
-# the jump resolver
 import zlib
 
 from collections import OrderedDict
@@ -69,7 +68,6 @@ def compile_sl(line: str):
         # figure out how many times we need to multiply it by 32767
         # then ADD the remainder
         mul_amount = val // 0x7fff
-        print(mul_amount)
         remainder = val % 0x7fff
         return [
             b"\x00\x02", mul_amount.to_bytes(2, byteorder="big"),  # stack load the amount to multiply
@@ -204,16 +202,30 @@ def compile_add(line: str):
 # so I do actually allow a multiplication op
 # rather than forcing multiple adds
 def compile_mul(line: str):
-    # fmt: `mul <val>`
+    # fmt: `mul [val]`
     # multiples TOS by the value provided
     # if no value is provided, it will use TOS
     instruction = []
 
     if line:
         val = int(line, 0).to_bytes(length=2, byteorder="big")
-        instruction.extend(b"\x00\x02", int(line))
+        instruction.extend([b"\x00\x02", val])
 
-    instruction.extend([b"\x00\x30"])
+    instruction.extend([b"\x00\x31\x00\x00"])
+    return instruction
+
+
+def compile_sub(line: str):
+    # fmt: `sub [val]`
+    # multiplies TOS by the value provided
+    # if no value is provided, it will use TOS
+    instruction = []
+
+    if line:
+        val = int(line, 0).to_bytes(length=2, byteorder="big")
+        instruction.extend([b"\x00\x02", val])
+
+    instruction.extend([b"\x00\x032\x00\x00"])
     return instruction
 
 
