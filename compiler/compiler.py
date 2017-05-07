@@ -74,7 +74,7 @@ def compile_sl(line: str):
             b"\x00\x02", b"\x7f\xff",  # stack load 32767
             b"\x00\x31", b"\x00\x00",  # call the multiplication op
             b"\x00\x02", remainder.to_bytes(2, byteorder="big"),  # load remainder
-            b"\x00\x30", b"\x00\x00"   # call the addition op
+            b"\x00\x30", b"\x00\x00"  # call the addition op
         ]
 
     return [b"\x00\x02", val.to_bytes(2, byteorder="big")]
@@ -117,15 +117,18 @@ def compile_rgr(line: str):
 
     return [b"\x00\x11", R_MAP[reg].to_bytes(2, byteorder="big")]
 
+
 def compile_mmr(line: str):
     # fmt: `mmr`
     # reads from memory into the MVR with the address specified by the MAR
     return [b"\x00\x12\x00\x00"]
 
+
 def compile_mmw(line: str):
     # fmt: `mmw`
     # writes from memory from the MVR to memory with the address specified by the MAR
     return [b"\x00\x13\x00\x00"]
+
 
 # jump operations
 def compile_jmpl(line: str):
@@ -133,6 +136,7 @@ def compile_jmpl(line: str):
     # JuMP Label. This will jump to the specified label.
     # this is NOT a real instruction!
     # it compiles to `llbl <label>; jmpa`.
+    # it is not recommended to use this; use `jmpl` instead.
 
     pl = LabelPlaceholder(line)
 
@@ -141,24 +145,18 @@ def compile_jmpl(line: str):
         b"\x00\x23", b"\x00\x00"  # jump absolute
     ]
 
+    return code
+
 
 def compile_jmpr(line: str):
     # fmt: `jmpr <label>`
-    # JuMP Return. This will jump to the specified label, and set register R7.
-    # A `ret` instruction will `return` from the label, jumping back to the location of R7.
-    # this is NOT a real instruction!
-    # it compiles to `rgr pc; add 10; rgw R7; jmpl <label>`.
+    # this will place the current memory location at 4 * R7, increase R7, then jump to the label
 
     # get a label placeholder that we need to jump to label
     pl = LabelPlaceholder(line)
 
-    # emit the RGR and the RGW
     code = [
-        b"\x00\x11", R_MAP["PC"].to_bytes(2, byteorder="big"),  # rgr PC
-        b"\x00\x30", b"\x00\x10",  # add 16
-        b"\x00\x10", R_MAP["R7"].to_bytes(2, byteorder="big"),  # rgw R7
-        b"\x00\x04", pl,  # llbl label
-        b"\x00\x23", b"\x00\x00"  # jump absolute
+        b"\x00\x20", pl
     ]
 
     return code
@@ -167,14 +165,10 @@ def compile_jmpr(line: str):
 def compile_ret(line: str):
     # fmt: `ret`
     # RETurn from jump
-    # This will jump to the address specified in `R7`.
-
-    # this is NOT a real instruction!
-    # it compiles to `rgr R7; jmpa`
+    # This will jump to the address specified in the jump stack by the pointer in R7.
 
     code = [
-        b"\x00\x11", R_MAP["R7"].to_bytes(2, byteorder="big"),
-        b"\x00\x23", b"\x00\x00"
+        b"\x00\x21\x00\x00"
     ]
 
     return code
@@ -183,7 +177,7 @@ def compile_ret(line: str):
 def compile_jmpa(line: str):
     # fmt: `jmpa`
     # JuMP Absolute. This will jump to the absolute address, specified by TOS.
-    # It is very rare that this is needed; a JMPL or JMPR will often be better.
+    # It is very rare that this is needed explicitly; a JMPL or JMPR will often be better.
     return [b"\x00\x23\x00\x00"]
 
 
@@ -197,6 +191,7 @@ def compile_add(line: str):
         ins.extend([b"\x00\x02", val])
 
     return ins + [b"\x00\x30\x00\x00"]
+
 
 # im not 100% mean
 # so I do actually allow a multiplication op
@@ -343,7 +338,8 @@ def kl27_compile(args: argparse.Namespace):
         f = glob[func]
         # call with the rest of the line to parse and construct
         instructions = f(" ".join(line.split(" ")[1:]))
-        code.extend(instructions)
+        if instructions:
+            code.extend(instructions)
 
         # increment the pointer by the length of instructions produced
         to_incr = sum(len(x) for x in instructions)

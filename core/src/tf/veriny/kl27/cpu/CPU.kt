@@ -27,9 +27,8 @@ val opcodeMap: Map<Int, String> = mapOf(
         0x12 to "mmr",
         0x13 to "mmw",
         // jumps
-        0x20 to "jmpl",
-        0x21 to "jmpr",
-        0x22 to "ret",
+        0x20 to "jmpr",
+        0x21 to "ret",
         0x23 to "jmpa",
         // math
         0x30 to "add",
@@ -295,7 +294,32 @@ class CPU(f: K27File) {
                 val memoryValue = this.readFromReg(0x09)
                 this.memory.write32(addr, memoryValue)
             }
-            // 0x12 through 0x22 unused
+            // 0x12 through 0x19 unused
+            0x20 -> {
+                // JMPR, jump return
+                // calculate offset in memory to write
+                val pointer = this.readFromReg(0x07)
+                this.writeToReg(0x07, pointer + 1)
+                val index = pointer * 4
+                // add 4 to value of pc
+                // this means it will return to the next instruction
+                // (instead of jumping infinitely)
+                this.memory.write32(index, this.programCounter.value)
+
+                // now set the PC to its new value
+                // and jump to it
+                val offset = this.memory.getLabelOffset(instruction.opval)
+                this.jump(offset)
+            }
+            0x21 -> {
+                // RET, return
+                val pointer = this.readFromReg(0x07)
+                this.writeToReg(0x07, pointer - 1)
+                val index = pointer * 4
+                val addr = this.memory.read32(index - 4)
+                // set PC to the address to return from
+                this.jump(addr)
+            }
             0x23 -> {
                 // JMPA, jump absolute
                 val TOS = this.popStack()
@@ -310,6 +334,7 @@ class CPU(f: K27File) {
                 this.pushStack(final)
             }
             0x31 -> {
+                // MUL, multiply
                 val final = this.popStack() * this.popStack()
                 this.pushStack(final)
             }
