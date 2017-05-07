@@ -5,7 +5,7 @@ import java.nio.ByteBuffer
 /*
 | Section         | Offset             | Description                                    |
 | --------------- | ------------------ | -----------------------------------------------|
-| Reserved        | 0x00000 - 0x00100  | Reserved space of 256 bytes.                   |
+| Reserved        | 0x00000 - 0x00100  | Jump stack                                     |
 | Label table     | 0x00100 - 0x01000  | 3840 bytes for the label table, 640 labels max |
 | Program section | 0x01000 - 0x40000  | Reserved section for program space.            |
 | Main memory     | 0x40000 - 0x100000 | Section for main memory.                       |
