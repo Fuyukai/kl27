@@ -283,8 +283,21 @@ class CPU(f: K27File) {
                 // reads from the value specified by the MAR
                 // puts data into the MVR
                 val addr = this.readFromReg(0x08)
-                val memoryValue = this.memory.read32(addr)
-                this.writeToReg(0x09, memoryValue)
+                val bytes = instruction.opval
+
+                // check how many bytes to read or write
+                val memoryValue: Number = when (bytes.toInt()) {
+                    1 -> this.memory.read8(addr)
+                    2 -> this.memory.read16(addr)
+                    4 -> this.memory.read32(addr)
+                    else -> {
+                        this.error("Unaligned read $bytes")
+                        // make the compiler not complain
+                        throw Exception()
+                    }
+                }
+
+                this.writeToReg(0x09, memoryValue.toInt())
             }
             0x13 -> {
                 // MMW, memory write
@@ -292,7 +305,20 @@ class CPU(f: K27File) {
                 // puts data into memory at address in MAR
                 val addr = this.readFromReg(0x08)
                 val memoryValue = this.readFromReg(0x09)
-                this.memory.write32(addr, memoryValue)
+
+                // check how many bytes to read or write
+                val bytes = instruction.opval
+                when (bytes.toInt()) {
+                    1 -> this.memory.write8(addr, memoryValue)
+                    2 -> this.memory.write16(addr, memoryValue)
+                    4 -> this.memory.write32(addr, memoryValue)
+                    else -> {
+                        this.error("Unaligned write $bytes")
+                        // make the compiler not complain
+                        throw Exception()
+                    }
+                }
+
             }
             // 0x12 through 0x19 unused
             0x20 -> {

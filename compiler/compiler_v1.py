@@ -71,7 +71,8 @@ def compile_sl(line: str):
         mul_amount = val // 0x7fff
         remainder = val % 0x7fff
         return [
-            b"\x00\x02", mul_amount.to_bytes(2, byteorder="big"),  # stack load the amount to multiply
+            b"\x00\x02", mul_amount.to_bytes(2, byteorder="big"),
+            # stack load the amount to multiply
             b"\x00\x02", b"\x7f\xff",  # stack load 32767
             b"\x00\x31", b"\x00\x00",  # call the multiplication op
             b"\x00\x02", remainder.to_bytes(2, byteorder="big"),  # load remainder
@@ -122,13 +123,27 @@ def compile_rgr(line: str):
 def compile_mmr(line: str):
     # fmt: `mmr`
     # reads from memory into the MVR with the address specified by the MAR
-    return [b"\x00\x12\x00\x00"]
+
+    # the 2nd arg is the number of bytes to read
+    if line:
+        val = int(line, 0)
+    else:
+        val = 4
+
+    return [b"\x00\x12", val.to_bytes(2, byteorder="big")]
 
 
 def compile_mmw(line: str):
     # fmt: `mmw`
     # writes from memory from the MVR to memory with the address specified by the MAR
-    return [b"\x00\x13\x00\x00"]
+
+    # the 2nd arg is the number of bytes to write
+    if line:
+        val = int(line, 0)
+    else:
+        val = 4
+
+    return [b"\x00\x13", val.to_bytes(2, byteorder="big")]
 
 
 # jump operations
