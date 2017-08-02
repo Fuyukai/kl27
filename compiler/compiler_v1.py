@@ -11,6 +11,7 @@ This compiler does several things:
  - Inserts label addresses
 """
 import argparse
+import os
 import pprint
 import shlex
 import struct
@@ -250,6 +251,10 @@ def kl27_compile(args: argparse.Namespace):
     def process_include(line: str):
         # this is the file we want to include
         second = shlex.split(line)[1]
+        if not os.path.exists(second):
+            print(f"error: no such file: {second}")
+            sys.exit(1)
+
         with open(second) as f:
             firstline = f.readline()
             firstline = firstline.replace("\n", "").replace("\r", "")
@@ -329,11 +334,13 @@ def kl27_compile(args: argparse.Namespace):
 
         # extract the function to compile the instruction
         glob = globals()
-        func = f"compile_{instruction}"
+        func = f"compile_{instruction.lower()}"
         if func not in glob:
-            print(f"error: line {lineno}: in label {current_label}:\n\t unknown instruction `{instruction}`.")
+            print(f"error: line {lineno}: in label {current_label}:\n\t unknown instruction "
+                  f"`{instruction}`.")
             return 1
-        print(f"compiling instruction {instruction} at address {hex(current_pointer)} inside {current_label}")
+        print(f"compiling instruction {instruction} at address {hex(current_pointer)} inside "
+              f"{current_label}")
 
         f = glob[func]
         # call with the rest of the line to parse and construct
@@ -380,7 +387,12 @@ def kl27_compile(args: argparse.Namespace):
 
         for n, i in enumerate(loop_code):
             if isinstance(i, LabelPlaceholder):
-                print(f"resolving jump for `{i.label_name}` to `{hex(label_table[i.label_name][1])}`")
+                if i.label_name not in label_table:
+                    print(f"error: unknown label {i.label_name} to resolve")
+                    sys.exit(1)
+
+                print(f"resolving jump for `{i.label_name}` to "
+                      f"`{hex(label_table[i.label_name][1])}`")
                 # replace it with the resolved
                 code[n] = i.resolve(label_table)
                 resolved_labels.add(i.label_name)
