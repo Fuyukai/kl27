@@ -387,10 +387,10 @@ def kl27_compile(args: argparse.Namespace):
     for id, addr in label_table.values():
         # pack the (id, addr)
         final_label_table.append(
-            struct.pack(">hi", id, addr)
+            struct.pack(">i", addr)
         )
 
-    final_label_table.append(b"\xff\xff\xff\xff\xff\xff")
+    final_label_table.append(b"\xff\xff\xff\xff")
     print("generated", len(final_label_table), "table entries")
 
     final_label_table = b"".join(final_label_table)

@@ -2,6 +2,7 @@ package tf.veriny.kl27
 
 import com.badlogic.gdx.*
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application
+import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Window
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3WindowConfiguration
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.GL20
@@ -16,7 +17,7 @@ import tf.veriny.kl27.cpu.opcodeMap
 
 // If the GPU window should be created.
 // This is false currently until the GPU code is written.
-const val MAKE_GPU = false
+const val MAKE_GPU = true
 
 
 // the KL27 window doesnt interact much
@@ -35,6 +36,8 @@ class MainWindow(assembledFile: String) : ApplicationAdapter(), InputProcessor {
     // we want to translate the view to the top left
     // so we use a camera view
     internal lateinit var camera: OrthographicCamera
+
+    internal var gpuWindow: Lwjgl3Window? = null
 
     // KL27 internals
     var mainFile: K27File = K27File(assembledFile)
@@ -84,8 +87,11 @@ class MainWindow(assembledFile: String) : ApplicationAdapter(), InputProcessor {
         if (MAKE_GPU) {
             val app = Gdx.app as Lwjgl3Application
             val config = Lwjgl3WindowConfiguration()
+            // set some config
+            config.setResizable(false)
             config.setTitle("KL27 GPU")
-            app.newWindow(GPUWindow(), config)
+
+            this.gpuWindow = app.newWindow(GPUWindow(this.cpu), config)
         }
 
     }
@@ -225,6 +231,8 @@ class MainWindow(assembledFile: String) : ApplicationAdapter(), InputProcessor {
         this.regFont.dispose()
         this.dbgFont.dispose()
         this.errFont.dispose()
+
+        this.gpuWindow?.closeWindow()
     }
 
 
@@ -260,6 +268,15 @@ class MainWindow(assembledFile: String) : ApplicationAdapter(), InputProcessor {
                 if (this.cpu.state != CPUState.debugging) return true
                 // run a single cycle
                 this.cpu.runCycle()
+            }
+            Input.Keys.B -> {
+                // halt this cpu
+                // so it doesn't start running in the BG
+                this.cpu.setHalted()
+
+                // reset and recreate the CPU from the main file
+                this.mainFile.reset()
+                this.cpu = CPU(this.mainFile)
             }
         }
         return true

@@ -103,7 +103,6 @@ class CPU(f: K27File) {
     fun setHalted() =
         if (this.state == CPUState.errored) {} else this.state = CPUState.halted
 
-
     /**
      * Sets the state of the CPU to running.
      *
