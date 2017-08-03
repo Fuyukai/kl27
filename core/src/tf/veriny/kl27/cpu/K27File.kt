@@ -32,8 +32,6 @@ class K27File(path: String) {
 
     // The path to the K27 file.
     val filePath = path
-    // The bytestream for the file.
-    val byteStream: FileInputStream
 
     // KL27 fields
     var version: Int = -1
@@ -42,23 +40,41 @@ class K27File(path: String) {
     var stackSize: Short = -1
     var checkSum: ByteArray = ByteArray(4)
 
+    var labelCount: Short = 0
+    lateinit var labelTable: ByteArray
+
+    lateinit var instructionTable: ByteArray
+
     init {
-        val f = File(path)
-        // read all the bytes, thx kotlin
-        this.byteStream = f.inputStream()
+        // has the side effect of re-opening and re-reading
+        this.reset()
+    }
+
+    fun reset() {
+        val stream = this.open()
         // parse the header
-        this.parseHeader()
+        this.parseHeader(stream)
+        this.parseLabelTable(stream)
+        this.readInstructions(stream)
+        stream.close()
+    }
+
+    /**
+     * Opens and reads the K27 file.
+     */
+    fun open(): FileInputStream {
+        return File(this.filePath).inputStream()
     }
 
     /**
      * Parses a K27 file's header.
      */
-    fun parseHeader() {
+    fun parseHeader(stream: FileInputStream) {
         // this is bad(tm)
         val magicNumber = CharArray(4)
         // scan in the magic number
         (0..3).forEach {
-            magicNumber[it] = this.byteStream.read().toChar()
+            magicNumber[it] = stream.read().toChar()
         }
 
         val joined = magicNumber.joinToString("")
@@ -66,23 +82,42 @@ class K27File(path: String) {
             throw RuntimeException("Invalid magic number: " + joined)
         }
         // read in the version
-        this.version = this.byteStream.read()
+        this.version = stream.read()
 
         // read the compressed bit
         // 0 - uncompressed, 1 - lzma
-        this.compressionMode = this.byteStream.read().toShort()
+        this.compressionMode = stream.read().toShort()
 
         val j = ByteArray(4)
         // read 4 bytes from the byte stream onto the byte array
-        this.byteStream.read(j)
+        stream.read(j)
         this.startOffset = ByteBuffer.wrap(j).int
 
         // read the stack size
         val ss = ByteArray(2)
-        this.byteStream.read(ss)
+        stream.read(ss)
         this.stackSize = ByteBuffer.wrap(ss).short
         // read the checksum
-        this.byteStream.read(this.checkSum)
+        stream.read(this.checkSum)
+    }
+
+    /**
+     * Copies the label table from the file.
+     */
+    fun parseLabelTable(stream: FileInputStream) {
+        this.labelCount = run {
+            val ib = ByteArray(2)
+            stream.read(ib)
+
+            return@run ByteBuffer.wrap(ib).short
+        }
+
+        // copy the labels into the stream
+        this.labelTable = ByteArray(size=this.labelCount * 4)
+        stream.read(this.labelTable)
+
+        // read the 4 bytes of padding
+        (0..4).forEach { stream.read() }
     }
 
     /**
@@ -91,20 +126,18 @@ class K27File(path: String) {
     fun copyLabelTable(mem: MMU) {
         // start here to write into memory.
         var offset = 0x00100
-        // read in the first two bytes, which has the number of labels needed
-        val ib = ByteArray(2)
-        this.byteStream.read(ib)
-        val count = ByteBuffer.wrap(ib).short
-
-        (0..count - 1).forEach {
-            val ba = ByteArray(6)
-            this.byteStream.read(ba)
-            println("Copied label: " + ba.contentToString())
-            // copy into memory byte by byte
-            ba.forEach { b -> mem.write8(offset, b); offset++ }
+        // read each byte from the label table into memory
+        this.labelTable.forEach {
+            mem.write8(offset, it)
+            offset++
         }
-        // skip 6 bytes
-        this.byteStream.read(ByteArray(6))
+    }
+
+    /**
+     * Reads the instructions from the file.
+     */
+    fun readInstructions(stream: FileInputStream) {
+        this.instructionTable = stream.readBytes(stream.available())
     }
 
     /**
@@ -114,12 +147,7 @@ class K27File(path: String) {
         var offset = 0x01000
 
         // iterate over the bytes in the file and copy them to memory
-        while (true) {
-            val b = this.byteStream.read()
-
-            // break if the read failed
-            if (b == -1) break
-
+        this.instructionTable.forEach { b ->
             // copy into memory
             mem.write8(offset, b)
             offset += 1
